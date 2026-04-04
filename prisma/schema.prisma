@@ -1,0 +1,300 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ============================================
+// TENANT / VENDOR (Multi-Tenancy)
+// ============================================
+
+model Tenant {
+  id                 String        @id @default(cuid())
+  name               String       
+  email              String        @unique
+  phone              String?      
+  logoUrl            String?      
+  primaryColor      String        @default("#0ea5e9")
+  subscriptionPlan  String @default("FREE")
+  isActive           Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  users              User[]
+  outlets            Outlet[]
+  frameTemplates     FrameTemplate[]
+  vouchers           Voucher[]
+  testimonials       Testimonial[]
+  brandAssets        BrandAsset[]
+}
+
+// ============================================
+// OUTLET (Photo Booth Location)
+// ============================================
+
+model Outlet {
+  id           String        @id @default(cuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String       
+  address      String       
+  phone        String?      
+  latitude     Float?    
+  longitude    Float?    
+  operatingHours String?      // {"monday": "09:00-21:00", ...}
+  isActive     Boolean       @default(true)
+  machineId    String        @unique // Unique booth identifier
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  config       OutletConfig?
+  users        User[]
+  sessions     SessionPhoto[]
+  transactions Transaction[]
+  heartbeats   BoothHeartbeat[]
+  testimonials Testimonial[]
+
+  @@index([tenantId])
+  @@index([machineId])
+}
+
+model OutletConfig {
+  id              String   @id @default(cuid())
+  outletId        String   @unique
+  outlet          Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  paymentMethods  String     @default("{\"cash\": true, \"qris\": true, \"voucher\": true}")
+  priceDefault    Float  @default(0)
+  printEnabled    Boolean  @default(true)
+  galleryEnabled  Boolean  @default(true)
+  gifEnabled      Boolean  @default(true)
+  newspaperEnabled Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ============================================
+// USERS (Role-based Access)
+// ============================================
+
+model User {
+  id           String        @id @default(cuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outletId     String?
+  outlet       Outlet?       @relation(fields: [outletId], references: [id])
+  email        String        @unique
+  passwordHash String       
+  name         String       
+  role         String @default("STAFF")
+  isActive     Boolean       @default(true)
+  lastLogin    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([tenantId])
+  @@index([outletId])
+}
+
+// ============================================
+// FRAME TEMPLATES
+// ============================================
+
+model FrameTemplate {
+  id           String        @id @default(cuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String       
+  type         String @default("FOUR_R")
+  imageUrl     String       
+  thumbnailUrl String?      
+  width        Int
+  height       Int
+  price        Float       @default(0)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  sessions     SessionPhoto[]
+
+  @@index([tenantId])
+}
+
+// ============================================
+// SESSION PHOTOS (Photo Session)
+// ============================================
+
+model SessionPhoto {
+  id              String          @id @default(cuid())
+  outletId        String
+  outlet          Outlet          @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  frameId         String?
+  frame           FrameTemplate? @relation(fields: [frameId], references: [id])
+  sessionCode     String          @unique
+  status          String @default("CAPTURING")
+  photos          String            // Array of photo URLs/Base64
+  gifUrl          String?        
+  newspaperUrl    String?        
+  totalPrice      Float         @default(0)
+  paymentMethod   String?
+  paymentStatus   String @default("PENDING")
+  paymentRef      String?        
+  voucherCode     String?        
+  galleryCode     String          @unique
+  galleryExpiresAt DateTime?
+  createdAt      DateTime        @default(now())
+  completedAt    DateTime?
+
+  transaction    Transaction?
+
+  @@index([outletId, status])
+  @@index([sessionCode])
+  @@index([galleryCode])
+}
+
+// ============================================
+// VOUCHERS
+// ============================================
+
+model Voucher {
+  id           String        @id @default(cuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code         String        @unique
+  type         String @default("PERCENTAGE")
+  value        Float      
+  minOrder     Float       @default(0)
+  maxUses      Int?
+  usedCount    Int           @default(0)
+  usageType    String @default("MULTI_USE")
+  validFrom    DateTime
+  validUntil   DateTime
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([tenantId])
+  @@index([code])
+}
+
+// ============================================
+// TRANSACTIONS
+// ============================================
+
+model Transaction {
+  id              String          @id @default(cuid())
+  outletId        String
+  outlet          Outlet          @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  sessionId       String          @unique
+  session         SessionPhoto    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  amount          Float         
+  paymentMethod   String
+  paymentGateway  String?
+  transactionRef  String?        
+  qrisString      String?         // Dynamic QRIS
+  status          String @default("PENDING")
+  createdAt       DateTime        @default(now())
+  paidAt          DateTime?
+
+  @@index([outletId, createdAt])
+}
+
+// ============================================
+// BOOTH HEARTBEAT (Health Monitoring)
+// ============================================
+
+model BoothHeartbeat {
+  id            String        @id @default(cuid())
+  machineId     String       
+  outletId      String
+  outlet        Outlet        @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  status        String @default("ONLINE")
+  cpuUsage      Float?     
+  memoryUsage   Float?     
+  diskUsage     Float?     
+  lastPhotoTime DateTime?
+  lastSeen      DateTime
+  createdAt     DateTime      @default(now())
+
+  @@index([machineId, lastSeen])
+  @@index([outletId])
+}
+
+// ============================================
+// GALLERY QUEUE (Offline Upload Queue)
+// ============================================
+
+model GalleryQueue {
+  id           String        @id @default(cuid())
+  sessionId    String
+  type         String @default("PHOTO")
+  localPath    String       
+  cloudUrl     String?      
+  status       String @default("PENDING")
+  retryCount   Int           @default(0)
+  maxRetries   Int           @default(3)
+  errorMessage String?      
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+
+// MARKETING - TESTIMONIALS
+// ============================================
+
+model Testimonial {
+  id            String        @id @default(cuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outletId      String?
+  outlet        Outlet?       @relation(fields: [outletId], references: [id])
+  customerName  String       
+  customerPhoto String?      
+  message       String       
+  rating        Int           // 1-5
+  isApproved    Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+
+  @@index([tenantId])
+}
+
+// ============================================
+// BRAND ASSETS
+// ============================================
+
+model BrandAsset {
+  id        String        @id @default(cuid())
+  tenantId  String
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      String @default("LOGO")
+  url       String       
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([tenantId])
+}
+
+// ============================================
+// API KEYS (For Booth Authentication)
+// ============================================
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  outletId    String
+  name        String   
+  permissions String      // Array of permissions
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  lastUsed    DateTime?
+
+  @@index([key])
+  @@index([outletId])
+}
