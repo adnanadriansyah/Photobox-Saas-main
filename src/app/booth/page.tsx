@@ -62,7 +62,7 @@ const demoTemplates: Template[] = [
 const demoConfig = {
   outletId: 'demo-outlet',
   outletName: 'SnapNext Demo',
-  machineId: 'MACHINE-001',
+  machineId: 'BOOTH-ACEH-001',
   printEnabled: true,
   galleryEnabled: true,
   gifEnabled: false,
@@ -402,25 +402,138 @@ export default function BoothPage() {
     setTimeout(() => setPreview(), 2000)
   }
 
+  // Upload photos and complete session
+  const uploadPhotosAndComplete = async () => {
+    try {
+      const validPhotos = session.photos.filter(p => p && (p.url || p.base64))
+
+      if (validPhotos.length === 0) {
+        console.error('No valid photos to upload')
+        return
+      }
+
+      console.log('Uploading', validPhotos.length, 'photos...')
+
+      // Upload each photo
+      const uploadedUrls: string[] = []
+
+      for (const photo of validPhotos) {
+        try {
+          let blob: Blob
+
+          if (photo.base64 && photo.base64.startsWith('data:')) {
+            // Convert base64 data URL to blob
+            const base64Data = photo.base64.split(',')[1]
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            blob = new Blob([byteArray], { type: 'image/jpeg' })
+          } else if (photo.url) {
+            // If it's already a URL, try to fetch it
+            const response = await fetch(photo.url)
+            blob = await response.blob()
+          } else {
+            console.warn('Photo has no base64 or url:', photo)
+            continue
+          }
+
+          // Create form data
+          const formData = new FormData()
+          formData.append('photo', blob, `photo-${Date.now()}.jpg`)
+          formData.append('machineId', demoConfig.machineId)
+
+          // Upload to server
+          const uploadResponse = await fetch('/api/photos/upload', {
+            method: 'POST',
+            body: formData,
+          })
+
+          const uploadResult = await uploadResponse.json()
+
+          if (uploadResult.success) {
+            uploadedUrls.push(uploadResult.url)
+            console.log('Photo uploaded:', uploadResult.url)
+          } else {
+            console.error('Upload failed:', uploadResult.error)
+          }
+        } catch (error) {
+          console.error('Error uploading photo:', error)
+        }
+      }
+
+      if (uploadedUrls.length === 0) {
+        console.error('No photos were successfully uploaded')
+        return
+      }
+
+      // Create session in database with uploaded photos
+      const sessionResponse = await fetch('/api/sessions/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          machineId: demoConfig.machineId,
+        }),
+      })
+
+      const sessionData = await sessionResponse.json()
+
+      if (!sessionData.success) {
+        console.error('Failed to create session:', sessionData.error)
+        return
+      }
+
+      const { sessionId, galleryCode } = sessionData.data
+
+      // Update session with photos
+      const updateResponse = await fetch(`/api/sessions/${sessionId}/photos`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photos: uploadedUrls,
+          status: 'COMPLETED',
+          paymentStatus: 'COMPLETED',
+          totalPrice: demoConfig.defaultPrice,
+        }),
+      })
+
+      const updateResult = await updateResponse.json()
+
+      if (updateResult.success) {
+        console.log('Session completed with gallery code:', galleryCode)
+        return galleryCode
+      } else {
+        console.error('Failed to update session:', updateResult.error)
+        return null
+      }
+
+    } catch (error) {
+      console.error('Error in uploadPhotosAndComplete:', error)
+      return null
+    }
+  }
+
   // Handle print - sends directly to thermal printer without dialog
   const handlePrint = async () => {
     // Generate composite and print directly
     if (session.photos.length >= 3 && session.template) {
       setPrinting()
       setShowPrintUpsell(false)
-      
+
       try {
         // Generate composite image
         const photoUrls = session.photos.map(p => p.url || p.base64 || '').filter(Boolean)
         // Pass the selected filter to compositor (applied to photos only, not frame)
         const compositeUrl = await compositeToRamadanFrame(
-          session.template.imageUrl, 
+          session.template.imageUrl,
           photoUrls,
-          1080, 
+          1080,
           1920,
           session.selectedFilter && session.selectedFilter !== 'none' ? session.selectedFilter : undefined
         )
-        
+
         // Send to thermal printer API
         const response = await fetch('/api/print', {
           method: 'POST',
@@ -432,34 +545,42 @@ export default function BoothPage() {
         })
 
         const result = await response.json()
-        
+
         if (result.success) {
           console.log('Print sent successfully:', result.message)
         } else {
           console.error('Print failed:', result.error)
         }
-        
-        // Complete session after printing
-        setTimeout(() => {
-          const galleryCode = generateGalleryCode()
-          setCompleted(galleryCode)
 
-          // Send WhatsApp notification if phone number provided
-          if (session.customerPhone) {
-            sendGalleryNotification({
-              phoneNumber: session.customerPhone,
-              outletName: demoConfig.outletName,
-              galleryCode,
-              galleryUrl: `https://snapnext.com/gallery/${galleryCode}`,
-              photoCount: 3,
-            })
+        // Complete session after printing
+        setTimeout(async () => {
+          const galleryCode = await uploadPhotosAndComplete()
+
+          if (galleryCode) {
+            setCompleted(galleryCode)
+
+            // Send WhatsApp notification if phone number provided
+            if (session.customerPhone) {
+              sendGalleryNotification({
+                phoneNumber: session.customerPhone,
+                outletName: demoConfig.outletName,
+                galleryCode,
+                galleryUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/gallery?code=${galleryCode}`,
+                photoCount: session.photos.length,
+              })
+            }
+          } else {
+            console.error('Failed to upload photos and complete session')
+            // Fallback to local gallery code
+            const fallbackCode = generateGalleryCode()
+            setCompleted(fallbackCode)
           }
         }, 1500)
-        
+
       } catch (error) {
         console.error('Print error:', error)
-        setTimeout(() => {
-          const galleryCode = generateGalleryCode()
+        setTimeout(async () => {
+          const galleryCode = await uploadPhotosAndComplete() || generateGalleryCode()
           setCompleted(galleryCode)
         }, 2000)
       }
@@ -502,22 +623,29 @@ export default function BoothPage() {
   }
 
   // Handle print cancel - could be finish or proceed with 1 copy
-  const handlePrintCancel = () => {
+  const handlePrintCancel = async () => {
     setShowPrintUpsell(false)
     setShowAdditionalPayment(false)
     // Complete the session without additional prints
-    const galleryCode = generateGalleryCode()
-    setCompleted(galleryCode)
+    const galleryCode = await uploadPhotosAndComplete()
 
-    // Send WhatsApp notification if phone number provided
-    if (session.customerPhone) {
-      sendGalleryNotification({
-        phoneNumber: session.customerPhone,
-        outletName: demoConfig.outletName,
-        galleryCode,
-        galleryUrl: `https://snapnext.com/gallery/${galleryCode}`,
-        photoCount: 3,
-      })
+    if (galleryCode) {
+      setCompleted(galleryCode)
+
+      // Send WhatsApp notification if phone number provided
+      if (session.customerPhone) {
+        sendGalleryNotification({
+          phoneNumber: session.customerPhone,
+          outletName: demoConfig.outletName,
+          galleryCode,
+          galleryUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/gallery?code=${galleryCode}`,
+          photoCount: session.photos.length,
+        })
+      }
+    } else {
+      // Fallback to local gallery code
+      const fallbackCode = generateGalleryCode()
+      setCompleted(fallbackCode)
     }
   }
 

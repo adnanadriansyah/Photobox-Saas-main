@@ -3,7 +3,7 @@
 // ============================================
 
 import bcrypt from 'bcryptjs'
-import { PrismaClient } from '@prisma/client/edge'
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -366,12 +366,12 @@ async function main() {
       sessionCode: 'SESSION-ACEH-001',
       status: 'COMPLETED',
       photos: JSON.stringify([
-        '/photos/sample-1.jpg',
-        '/photos/sample-2.jpg',
-        '/photos/sample-3.jpg',
-        '/photos/sample-4.jpg',
+        'https://picsum.photos/400/600?random=1',
+        'https://picsum.photos/400/600?random=2',
+        'https://picsum.photos/400/600?random=3',
+        'https://picsum.photos/400/600?random=4',
       ]),
-      gifUrl: '/photos/sample-animated.gif',
+      gifUrl: 'https://picsum.photos/400/600?random=gif1',
       totalPrice: 25000,
       paymentMethod: 'CASH',
       paymentStatus: 'COMPLETED',
@@ -390,10 +390,10 @@ async function main() {
       sessionCode: 'SESSION-LHOK-001',
       status: 'COMPLETED',
       photos: JSON.stringify([
-        '/photos/sample-5.jpg',
-        '/photos/sample-6.jpg',
-        '/photos/sample-7.jpg',
-        '/photos/sample-8.jpg',
+        'https://picsum.photos/400/600?random=5',
+        'https://picsum.photos/400/600?random=6',
+        'https://picsum.photos/400/600?random=7',
+        'https://picsum.photos/400/600?random=8',
       ]),
       newspaperUrl: '/photos/sample-newspaper.pdf',
       totalPrice: 35000,
@@ -414,10 +414,10 @@ async function main() {
       sessionCode: 'SESSION-ACEH-002',
       status: 'COMPLETED',
       photos: JSON.stringify([
-        '/photos/sample-9.jpg',
-        '/photos/sample-10.jpg',
+        'https://picsum.photos/400/600?random=9',
+        'https://picsum.photos/400/600?random=10',
       ]),
-      gifUrl: '/photos/sample-animated-2.gif',
+      gifUrl: 'https://picsum.photos/400/600?random=gif2',
       totalPrice: 30000,
       paymentMethod: 'CASH',
       paymentStatus: 'COMPLETED',

@@ -54,6 +54,32 @@ function GalleryContent() {
     fetchGallery()
   }, [code])
 
+  const handleDownloadAll = async () => {
+    try {
+      const response = await fetch(`/api/download?code=${code}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to download photos')
+        return
+      }
+
+      // Create download link
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `gallery-${code}.zip`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Download error:', error)
+      alert('Failed to download photos')
+    }
+  }
+
   const handleCopyLink = () => {
     const link = `${window.location.origin}/gallery?code=${code}`
     navigator.clipboard.writeText(link)
@@ -161,20 +187,38 @@ function GalleryContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="aspect-[3/4] rounded-xl overflow-hidden bg-gray-200"
+              className="aspect-[3/4] rounded-xl overflow-hidden bg-gray-200 relative group"
             >
               <img 
                 src={photo} 
                 alt={`Photo ${index + 1}`}
                 className="w-full h-full object-cover"
               />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                <button
+                  onClick={() => {
+                    const a = document.createElement('a')
+                    a.href = photo
+                    a.download = `photo-${index + 1}.jpg`
+                    document.body.appendChild(a)
+                    a.click()
+                    document.body.removeChild(a)
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-2"
+                >
+                  <Download className="w-5 h-5 text-gray-800" />
+                </button>
+              </div>
             </motion.div>
           ))}
         </motion.div>
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4">
-          <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700">
+          <button 
+            onClick={handleDownloadAll}
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700"
+          >
             <Download className="w-5 h-5" />
             Download All
           </button>
