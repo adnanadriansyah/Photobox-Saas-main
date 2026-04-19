@@ -20,6 +20,7 @@ import {
   Sun
 } from 'lucide-react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ============================================
@@ -57,6 +58,7 @@ function SidebarItem({ icon: Icon, label, active, onClick }: SidebarItemProps) {
 // ============================================
 
 export function Sidebar() {
+  const router = useRouter()
   const { 
     sidebarOpen, 
     toggleSidebar, 
@@ -116,23 +118,33 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Bottom Actions */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t dark:border-gray-800 space-y-2">
-          {/* Dark Mode Toggle */}
-          <button 
-            onClick={toggleDarkMode}
-            className="w-full flex items-center gap-3 px-3 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800"
-          >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
-          
-          {/* Logout */}
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">
-            <LogOut className="w-5 h-5" />
-            <span>Logout</span>
-          </button>
-        </div>
+         {/* Bottom Actions */}
+         <div className="absolute bottom-0 left-0 right-0 p-4 border-t dark:border-gray-800 space-y-2">
+           {/* Dark Mode Toggle */}
+           <button 
+             onClick={toggleDarkMode}
+             className="w-full flex items-center gap-3 px-3 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800"
+           >
+             {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+             <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+           </button>
+           
+           {/* Logout */}
+           <button 
+             onClick={async () => {
+               try {
+                 await fetch('/api/admin/logout', { method: 'POST' })
+                 router.push('/admin/login')
+               } catch (error) {
+                 console.error('[Logout] error:', error)
+               }
+             }}
+             className="w-full flex items-center gap-3 px-3 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800"
+           >
+             <LogOut className="w-5 h-5" />
+             <span>Logout</span>
+           </button>
+         </div>
       </aside>
 
       {/* Mobile Overlay */}
