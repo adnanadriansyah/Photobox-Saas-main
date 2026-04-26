@@ -2,18 +2,22 @@
   "name": "snapnext-saas",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:seed": "npx tsx prisma/seed.ts",
-    "test:gallery": "npx tsx simple-test.js",
-    "test:create-gallery": "npx tsx create-test-gallery.js",
-    "test:api": "npx tsx test-api.js"
+ "scripts": {
+  "dev": "next dev",
+  "build": "prisma generate && next build",
+  "start": "next start",
+  "lint": "next lint",
+  "postinstall": "prisma generate",
+
+  "db:generate": "prisma generate",
+  "db:push": "prisma db push",
+  "db:studio": "prisma studio",
+  "db:seed": "npx tsx prisma/seed.ts",
+
+  "test:gallery": "npx tsx simple-test.js",
+  "test:create-gallery": "npx tsx create-test-gallery.js",
+  "test:api": "npx tsx test-api.js"
+
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
