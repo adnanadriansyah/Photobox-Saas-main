@@ -9,8 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url)
-    const transactionRef = url.searchParams.get('ref')
+    const transactionRef = request.nextUrl.searchParams.get('ref')
 
     if (!transactionRef) {
       return NextResponse.json(

@@ -28,32 +28,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if offline - queue for later
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      // Store in localStorage for offline queue
-      if (typeof localStorage !== 'undefined') {
-        const queue = JSON.parse(localStorage.getItem('wa-queue') || '[]')
-        queue.push({
-          phoneNumber,
-          outletName,
-          galleryCode,
-          galleryUrl,
-          photoCount,
-          type,
-          amount,
-          sessionCode,
-          timestamp: Date.now(),
-        })
-        localStorage.setItem('wa-queue', JSON.stringify(queue))
-        console.log('[WhatsApp] Added to offline queue')
-      }
-      
-      return NextResponse.json({
-        success: true,
-        queued: true,
-        message: 'Message queued for offline delivery',
-      })
-    }
+
 
     // Send based on type
     let result

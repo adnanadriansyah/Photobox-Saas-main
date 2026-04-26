@@ -188,8 +188,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const filename = searchParams.get('filename')
+    const filename = request.nextUrl.searchParams.get('filename')
 
     if (!filename) {
       return NextResponse.json(

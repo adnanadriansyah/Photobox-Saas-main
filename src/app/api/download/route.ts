@@ -10,8 +10,31 @@ import path from 'path'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const code = searchParams.get('code')
+    const code = request.nextUrl.searchParams.get('code')
+    if (!code) {
+      return NextResponse.json(
+        { success: false, error: 'Gallery code is required' },
+        { status: 400 }
+      )
+    }
+    return handleDownload(code)
+  } catch (error) {
+    console.error('[Download API] Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to create download' },
+      { status: 500 }
+    )
+  }
+}
+
+async function handleDownload(code: string) {
+  try {
+    if (!code) {
+      return NextResponse.json(
+        { success: false, error: 'Gallery code is required' },
+        { status: 400 }
+      )
+    }
 
     if (!code) {
       return NextResponse.json(

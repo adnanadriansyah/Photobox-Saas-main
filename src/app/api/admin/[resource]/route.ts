@@ -77,9 +77,8 @@ export async function GET(request: NextRequest, { params }: { params: { resource
   }
 
   try {
-    const url = new URL(request.url)
-    const id = url.searchParams.get('id')
-    const where = buildWhere(url.searchParams)
+    const id = request.nextUrl.searchParams.get('id')
+    const where = buildWhere(request.nextUrl.searchParams)
     const prismaClient = (prisma as any)[modelName] as any
 
     if (id) {
@@ -121,8 +120,7 @@ export async function PUT(request: NextRequest, { params }: { params: { resource
   }
 
   try {
-    const url = new URL(request.url)
-    const id = url.searchParams.get('id')
+    const id = request.nextUrl.searchParams.get('id')
     if (!id) {
       return NextResponse.json({ success: false, error: 'Resource id is required' }, { status: 400 })
     }
@@ -146,8 +144,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { resou
   }
 
   try {
-    const url = new URL(request.url)
-    const id = url.searchParams.get('id')
+    const id = request.nextUrl.searchParams.get('id')
     if (!id) {
       return NextResponse.json({ success: false, error: 'Resource id is required' }, { status: 400 })
     }
