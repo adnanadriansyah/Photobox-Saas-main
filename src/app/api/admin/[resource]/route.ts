@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 
+export const dynamic = 'force-dynamic';
+
 const resourceMap: Record<string, string> = {
   tenants: 'tenant',
   outlets: 'outlet',

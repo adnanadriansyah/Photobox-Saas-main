@@ -10,6 +10,8 @@ import path from 'path'
 import { prisma } from '@/lib/db/prisma'
 import { createNewPhotoSession } from '@/lib/gallery-code-generator'
 
+export const dynamic = 'force-dynamic';
+
 // Configure upload directory
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'photos')
 
