@@ -1,28 +1,28 @@
 // ============================================
-// Local File Upload API Route
-// Saves photos to public/photos folder for local demo
+// Photo Upload API Route
+// Saves photos to Supabase Storage
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 import { prisma } from '@/lib/db/prisma'
 import { createNewPhotoSession } from '@/lib/gallery-code-generator'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
-// Configure upload directory
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'photos')
+// Supabase admin client (service role - server side only)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
+const BUCKET = 'photos'
+
+// ============================================
+// POST - Upload Single Photo
+// ============================================
 export async function POST(request: NextRequest) {
   try {
-    // Ensure upload directory exists
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true })
-    }
-
-    // Parse multipart form data
     const formData = await request.formData()
     const file = formData.get('photo') as File
     const sessionId = formData.get('sessionId') as string
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     let targetGalleryCode = galleryCode
     let targetSessionId = sessionId
 
-    // If no gallery code provided, create new session
+    // Kalau tidak ada gallery code, buat session baru
     if (!targetGalleryCode) {
       if (!machineId) {
         return NextResponse.json(
@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Find outlet by machineId
       const outlet = await prisma.outlet.findUnique({
         where: { machineId },
       })
@@ -60,39 +59,53 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Create new session
       const newSession = await createNewPhotoSession(outlet.id)
       targetGalleryCode = newSession.galleryCode
       targetSessionId = newSession.id
     }
 
-    // Generate unique filename
+    // Generate filename
     const timestamp = Date.now()
     const extension = file.name.split('.').pop() || 'jpg'
     const filename = `${targetGalleryCode}-${timestamp}.${extension}`
+    const storagePath = `sessions/${targetGalleryCode}/${filename}`
 
-    // Convert file to buffer
+    // Convert to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Save to public/photos folder
-    const filepath = path.join(UPLOAD_DIR, filename)
-    await writeFile(filepath, buffer)
+    // Upload ke Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET)
+      .upload(storagePath, buffer, {
+        contentType: file.type || 'image/jpeg',
+        upsert: true,
+      })
 
-    // Return the public URL path
-    const photoUrl = `/photos/${filename}`
+    if (uploadError) {
+      console.error('[Supabase Storage] Upload error:', uploadError)
+      return NextResponse.json(
+        { success: false, error: uploadError.message },
+        { status: 500 }
+      )
+    }
 
-    console.log('[Local Storage] Photo saved:', photoUrl)
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(storagePath)
+
+    console.log('[Supabase Storage] Photo saved:', publicUrl)
 
     return NextResponse.json({
       success: true,
-      url: photoUrl,
+      url: publicUrl,
       filename,
       galleryCode: targetGalleryCode,
       sessionId: targetSessionId,
     })
   } catch (error) {
-    console.error('[Local Storage] Upload error:', error)
+    console.error('[Supabase Storage] Upload error:', error)
     return NextResponse.json(
       { success: false, error: String(error) },
       { status: 500 }
@@ -101,16 +114,10 @@ export async function POST(request: NextRequest) {
 }
 
 // ============================================
-// Upload Multiple Photos (Burst Mode)
+// PUT - Upload Multiple Photos (Burst Mode)
 // ============================================
-
 export async function PUT(request: NextRequest) {
   try {
-    // Ensure upload directory exists
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true })
-    }
-
     const formData = await request.formData()
     const files = formData.getAll('photos') as File[]
     const galleryCode = formData.get('galleryCode') as string
@@ -125,7 +132,6 @@ export async function PUT(request: NextRequest) {
 
     let targetGalleryCode = galleryCode
 
-    // If no gallery code provided, create new session
     if (!targetGalleryCode) {
       if (!machineId) {
         return NextResponse.json(
@@ -134,7 +140,6 @@ export async function PUT(request: NextRequest) {
         )
       }
 
-      // Find outlet by machineId
       const outlet = await prisma.outlet.findUnique({
         where: { machineId },
       })
@@ -146,7 +151,6 @@ export async function PUT(request: NextRequest) {
         )
       }
 
-      // Create new session
       const newSession = await createNewPhotoSession(outlet.id)
       targetGalleryCode = newSession.galleryCode
     }
@@ -158,17 +162,31 @@ export async function PUT(request: NextRequest) {
       const timestamp = Date.now()
       const extension = file.name.split('.').pop() || 'jpg'
       const filename = `${targetGalleryCode}-${i + 1}-${timestamp}.${extension}`
+      const storagePath = `sessions/${targetGalleryCode}/${filename}`
 
       const bytes = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
 
-      const filepath = path.join(UPLOAD_DIR, filename)
-      await writeFile(filepath, buffer)
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(storagePath, buffer, {
+          contentType: file.type || 'image/jpeg',
+          upsert: true,
+        })
 
-      uploadedUrls.push(`/photos/${filename}`)
+      if (uploadError) {
+        console.error(`[Supabase Storage] Error uploading file ${i + 1}:`, uploadError)
+        continue // skip file yang gagal, lanjut ke berikutnya
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(storagePath)
+
+      uploadedUrls.push(publicUrl)
     }
 
-    console.log('[Local Storage] Multiple photos saved:', uploadedUrls)
+    console.log('[Supabase Storage] Multiple photos saved:', uploadedUrls)
 
     return NextResponse.json({
       success: true,
@@ -176,7 +194,7 @@ export async function PUT(request: NextRequest) {
       galleryCode: targetGalleryCode,
     })
   } catch (error) {
-    console.error('[Local Storage] Multiple upload error:', error)
+    console.error('[Supabase Storage] Multiple upload error:', error)
     return NextResponse.json(
       { success: false, error: String(error) },
       { status: 500 }
@@ -185,12 +203,12 @@ export async function PUT(request: NextRequest) {
 }
 
 // ============================================
-// Delete Photo (Cleanup)
+// DELETE - Hapus Photo
 // ============================================
-
 export async function DELETE(request: NextRequest) {
   try {
     const filename = request.nextUrl.searchParams.get('filename')
+    const galleryCode = request.nextUrl.searchParams.get('galleryCode')
 
     if (!filename) {
       return NextResponse.json(
@@ -199,29 +217,31 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Security: Only allow photos in the photos directory
-    if (filename.includes('..') || filename.includes('/')) {
+    if (filename.includes('..')) {
       return NextResponse.json(
         { success: false, error: 'Invalid filename' },
         { status: 400 }
       )
     }
 
-    const filepath = path.join(UPLOAD_DIR, filename)
+    const storagePath = galleryCode
+      ? `sessions/${galleryCode}/${filename}`
+      : `sessions/${filename}`
 
-    // Check if file exists before deletion
-    if (existsSync(filepath)) {
-      const { unlink } = await import('fs/promises')
-      await unlink(filepath)
-      return NextResponse.json({ success: true })
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .remove([storagePath])
+
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json(
-      { success: false, error: 'File not found' },
-      { status: 404 }
-    )
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[Local Storage] Delete error:', error)
+    console.error('[Supabase Storage] Delete error:', error)
     return NextResponse.json(
       { success: false, error: String(error) },
       { status: 500 }
