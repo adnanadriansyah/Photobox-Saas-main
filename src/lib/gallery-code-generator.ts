@@ -80,8 +80,8 @@ export async function createNewPhotoSession(outletId: string, frameId?: string) 
       frameId,
       sessionCode: `SESSION-${galleryCode}-001`,
       status: 'CAPTURING',
-      photos: JSON.stringify([]), // Start with empty array
-      totalPrice: 0, // Will be updated when payment is made
+      photos: [],          // ✅ fix: Json type, tidak perlu JSON.stringify
+      totalPrice: 0,
       paymentMethod: null,
       paymentStatus: 'PENDING',
       galleryCode,
