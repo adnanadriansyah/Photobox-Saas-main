@@ -23,13 +23,13 @@ export async function PUT(
 
     // Update session with photos
     const updatedSession = await prisma.sessionPhoto.update({
-      where: { id: sessionId },
-      data: {
-        photos: JSON.stringify(photos),
-        status: status || 'COMPLETED',
-        paymentStatus: paymentStatus || 'COMPLETED',
-        totalPrice: totalPrice || 0,
-      },
+    where: { id: sessionId },
+    data: {
+    photos: photos, // ✅ langsung pass array, tidak perlu JSON.stringify
+    status: status || 'COMPLETED',
+    paymentStatus: paymentStatus || 'PAID', // ✅ fix: COMPLETED → PAID
+    totalPrice: totalPrice || 0,
+    },
     })
 
     return NextResponse.json({
