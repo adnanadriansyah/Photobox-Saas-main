@@ -494,7 +494,7 @@ export default function BoothPage() {
         body: JSON.stringify({
           photos: uploadedUrls,
           status: 'COMPLETED',
-          paymentStatus: 'COMPLETED',
+          paymentStatus: 'PAID',
           totalPrice: demoConfig.defaultPrice,
         }),
       })
