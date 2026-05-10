@@ -66,12 +66,7 @@ async function handleDownload(code: string) {
     }
 
     // Parse photos array
-    let photos: string[] = []
-    try {
-      photos = JSON.parse(session.photos)
-    } catch {
-      photos = []
-    }
+    const photos: string[] = Array.isArray(session.photos) ? session.photos as string[] : []
 
     if (photos.length === 0) {
       return NextResponse.json(
