@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         photos: JSON.stringify(photos),
         totalPrice,
         paymentMethod: 'CASH',
-        paymentStatus: 'COMPLETED',
+        paymentStatus: 'PAID',
         galleryCode,
         galleryExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 hari
       },
