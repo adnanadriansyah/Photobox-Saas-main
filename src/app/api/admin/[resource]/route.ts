@@ -66,7 +66,7 @@ async function normalizePayload(resource: string, payload: any) {
   }
 
   if (resource === 'sessionPhotos' && payload.photos && !Array.isArray(payload.photos)) {
-    payload.photos = JSON.parse(payload.photos)
+  payload.photos = typeof payload.photos === 'string' ? JSON.parse(payload.photos) : payload.photos
   }
 
   return payload

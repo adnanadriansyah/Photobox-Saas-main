@@ -37,7 +37,7 @@ export async function PUT(
       data: {
         sessionId: updatedSession.id,
         galleryCode: updatedSession.galleryCode,
-        photos: JSON.parse(updatedSession.photos),
+        photos: updatedSession.photos,
       },
     })
   } catch (error) {
