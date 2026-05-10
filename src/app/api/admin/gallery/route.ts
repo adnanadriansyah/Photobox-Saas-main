@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: newSession.id,
         galleryCode: newSession.galleryCode,
-        photos: newSession.photos,
+        photos: Array.isArray(newSession.photos) ? newSession.photos : [],
         createdAt: newSession.createdAt,
       },
     })
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     const galleries = sessions.map((session: any) => ({
       id: session.id,
       galleryCode: session.galleryCode,
-      photos: session.photos,
+      photos: Array.isArray(session.photos) ? session.photos : [],
       status: session.status,
       outlet: session.outlet.name,
       frame: session.frame?.name || 'No Frame',

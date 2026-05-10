@@ -37,7 +37,7 @@ export async function PUT(
       data: {
         sessionId: updatedSession.id,
         galleryCode: updatedSession.galleryCode,
-        photos: updatedSession.photos,
+        photos: Array.isArray(updatedSession.photos) ? updatedSession.photos : [],
       },
     })
   } catch (error) {
