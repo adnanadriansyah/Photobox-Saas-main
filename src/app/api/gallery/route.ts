@@ -43,12 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse photos array
-    let photos: string[] = []
-    try {
-      photos = JSON.parse(session.photos)
-    } catch {
-      photos = []
-    }
+    const photos: string[] = Array.isArray(session.photos) ? session.photos as string[] : []
 
     return NextResponse.json({
       success: true,
