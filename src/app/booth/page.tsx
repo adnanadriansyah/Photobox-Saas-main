@@ -495,7 +495,7 @@ export default function BoothPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           machineId: demoConfig.machineId,
-          frameId: session.template?.id,
+          // frameId tidak dikirim karena demoTemplates pakai ID custom, bukan dari DB
         }),
       })
 
