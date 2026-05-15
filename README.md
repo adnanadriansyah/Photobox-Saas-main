@@ -94,7 +94,6 @@ Secara singkat:
 ├── lib/                  # Utilitas, helper, Supabase client
 ├── public/               # Aset statis
 ├── supabase/             # Migration & konfigurasi Supabase
-├── .env.local            # ⛔ Jangan di-push! (environment variables)
 ├── MIGRATION_GUIDE.md    # Panduan setup database
 └── README.md
 ```
