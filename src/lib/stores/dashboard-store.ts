@@ -304,10 +304,10 @@ const mockTestimonials: Testimonial[] = [
 ]
 
 const mockBranding: Branding = {
-  logoUrl: '/snapnext.jpg',
+  logoUrl: '',
   primaryColor: '#a855f7',
   secondaryColor: '#ec4899',
-  heroBannerUrl: '/hero-banner.jpg',
+  heroBannerUrl: '',
   companyName: 'SnapNext',
   tagline: 'Capture Your Moments'
 }

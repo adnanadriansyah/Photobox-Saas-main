@@ -7,7 +7,7 @@ import {
   Type, 
   Save,
   Upload,
-  X
+  Loader2
 } from 'lucide-react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { toast } from 'sonner'
@@ -15,6 +15,7 @@ import { motion } from 'framer-motion'
 
 // ============================================
 // Branding Module Component
+// Upload logo & hero banner ke Supabase Storage
 // ============================================
 
 export function BrandingModule() {
@@ -27,10 +28,85 @@ export function BrandingModule() {
     companyName: branding.companyName,
     tagline: branding.tagline
   })
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
+
+  // Upload file ke Supabase Storage via API
+  const uploadToStorage = async (file: File, folder: string): Promise<string | null> => {
+    try {
+      const formDataUpload = new FormData()
+      formDataUpload.append('photo', file, file.name)
+      formDataUpload.append('galleryCode', folder)
+
+      const response = await fetch('/api/photos/upload', {
+        method: 'POST',
+        body: formDataUpload,
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        return result.url
+      } else {
+        console.error('Upload failed:', result.error)
+        return null
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      return null
+    }
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Preview lokal dulu
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, logoUrl: reader.result as string }))
+    }
+    reader.readAsDataURL(file)
+
+    // Upload ke Supabase Storage
+    setUploadingLogo(true)
+    const url = await uploadToStorage(file, 'brand-logo')
+    setUploadingLogo(false)
+
+    if (url) {
+      setFormData(prev => ({ ...prev, logoUrl: url }))
+      toast.success('Logo uploaded!')
+    } else {
+      toast.error('Upload logo gagal, menggunakan preview lokal')
+    }
+  }
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Preview lokal dulu
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, heroBannerUrl: reader.result as string }))
+    }
+    reader.readAsDataURL(file)
+
+    // Upload ke Supabase Storage
+    setUploadingBanner(true)
+    const url = await uploadToStorage(file, 'brand-banner')
+    setUploadingBanner(false)
+
+    if (url) {
+      setFormData(prev => ({ ...prev, heroBannerUrl: url }))
+      toast.success('Banner uploaded!')
+    } else {
+      toast.error('Upload banner gagal, menggunakan preview lokal')
+    }
+  }
 
   const handleSave = () => {
     updateBranding(formData)
-    toast.success('Branding settings saved successfully!')
+    toast.success('Branding settings saved!')
   }
 
   const handleColorChange = (field: 'primaryColor' | 'secondaryColor', value: string) => {
@@ -138,18 +214,11 @@ export function BrandingModule() {
               </div>
             </div>
 
-            {/* Color Preview */}
             <div className="pt-4">
               <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Preview</label>
               <div className="flex gap-2">
-                <div 
-                  className="w-16 h-16 rounded-lg shadow-sm"
-                  style={{ backgroundColor: formData.primaryColor }}
-                />
-                <div 
-                  className="w-16 h-16 rounded-lg shadow-sm"
-                  style={{ backgroundColor: formData.secondaryColor }}
-                />
+                <div className="w-16 h-16 rounded-lg shadow-sm" style={{ backgroundColor: formData.primaryColor }} />
+                <div className="w-16 h-16 rounded-lg shadow-sm" style={{ backgroundColor: formData.secondaryColor }} />
               </div>
             </div>
           </div>
@@ -169,28 +238,26 @@ export function BrandingModule() {
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Logo</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                      setFormData({ ...formData, logoUrl: reader.result as string })
-                    }
-                    reader.readAsDataURL(file)
-                  }
-                }}
-                className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              {formData.logoUrl && (
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Logo selected</p>
+              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Upload Logo</label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  disabled={uploadingLogo}
+                  className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                />
+                {uploadingLogo && (
+                  <div className="absolute right-3 top-2.5">
+                    <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
+                  </div>
+                )}
+              </div>
+              {uploadingLogo && (
+                <p className="mt-1 text-sm text-purple-500">Uploading...</p>
               )}
             </div>
 
-            {/* Logo Preview */}
             <div className="pt-2">
               <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Preview</label>
               <div className="w-32 h-32 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
@@ -199,6 +266,7 @@ export function BrandingModule() {
                     src={formData.logoUrl} 
                     alt="Logo Preview"
                     className="max-w-full max-h-full object-contain"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
                   />
                 ) : (
                   <ImageIcon className="w-12 h-12 text-gray-400 dark:text-gray-300" />
@@ -222,28 +290,26 @@ export function BrandingModule() {
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Banner</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                      setFormData({ ...formData, heroBannerUrl: reader.result as string })
-                    }
-                    reader.readAsDataURL(file)
-                  }
-                }}
-                className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              {formData.heroBannerUrl && (
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Banner selected</p>
+              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Upload Banner</label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerUpload}
+                  disabled={uploadingBanner}
+                  className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                />
+                {uploadingBanner && (
+                  <div className="absolute right-3 top-2.5">
+                    <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
+                  </div>
+                )}
+              </div>
+              {uploadingBanner && (
+                <p className="mt-1 text-sm text-purple-500">Uploading...</p>
               )}
             </div>
 
-            {/* Banner Preview */}
             <div className="pt-2">
               <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Preview</label>
               <div className="w-full h-32 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
@@ -252,9 +318,13 @@ export function BrandingModule() {
                     src={formData.heroBannerUrl} 
                     alt="Banner Preview"
                     className="w-full h-full object-cover"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
                   />
                 ) : (
-                  <ImageIcon className="w-12 h-12 text-gray-400 dark:text-gray-300" />
+                  <div className="text-center text-gray-400 dark:text-gray-600">
+                    <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                    <p className="text-sm">Upload banner untuk preview</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -262,7 +332,7 @@ export function BrandingModule() {
         </motion.div>
       </div>
 
-      {/* Preview Section */}
+      {/* Live Preview */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -272,7 +342,6 @@ export function BrandingModule() {
         <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Live Preview</h2>
         
         <div className="border dark:border-gray-700 rounded-lg overflow-hidden">
-          {/* Header Preview */}
           <div 
             className="h-16 flex items-center px-6"
             style={{ backgroundColor: formData.primaryColor }}
@@ -283,13 +352,13 @@ export function BrandingModule() {
                   src={formData.logoUrl} 
                   alt="Logo"
                   className="h-8 w-auto"
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
                 />
               )}
               <span className="text-white font-bold">{formData.companyName}</span>
             </div>
           </div>
           
-          {/* Hero Preview */}
           <div 
             className="h-48 flex items-center justify-center relative"
             style={{ 
@@ -298,7 +367,7 @@ export function BrandingModule() {
                 : `linear-gradient(135deg, ${formData.primaryColor}, ${formData.secondaryColor})`
             }}
           >
-            <div className="text-center text-white z-10">
+            <div className="text-center text-white z-10 relative">
               <h3 className="text-2xl font-bold mb-2">{formData.companyName}</h3>
               <p className="text-lg opacity-90">{formData.tagline}</p>
             </div>
