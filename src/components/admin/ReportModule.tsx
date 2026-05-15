@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { 
   BarChart3, 
   TrendingUp, 
@@ -8,9 +8,7 @@ import {
   DollarSign,
   Camera,
   Store,
-  Calendar,
   Download,
-  Filter
 } from 'lucide-react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { motion } from 'framer-motion'
@@ -24,24 +22,83 @@ export function ReportModule() {
   const [dateRange, setDateRange] = useState('week')
   const [selectedOutlet, setSelectedOutlet] = useState('all')
 
-  // Calculate stats
-  const totalRevenue = transactions
+  // ============================================
+  // Filter transactions by date range & outlet
+  // ============================================
+  const filteredTransactions = useMemo(() => {
+    const now = new Date()
+    let startDate: Date
+
+    if (dateRange === 'week') {
+      startDate = new Date(now)
+      startDate.setDate(now.getDate() - 7)
+    } else if (dateRange === 'month') {
+      startDate = new Date(now)
+      startDate.setMonth(now.getMonth() - 1)
+    } else {
+      startDate = new Date(now)
+      startDate.setFullYear(now.getFullYear() - 1)
+    }
+
+    return transactions.filter(t => {
+      const txDate = new Date(t.createdAt)
+      const inRange = txDate >= startDate
+      const inOutlet = selectedOutlet === 'all' || t.outletId === selectedOutlet
+      return inRange && inOutlet
+    })
+  }, [transactions, dateRange, selectedOutlet])
+
+  // ============================================
+  // Stats dari data real
+  // ============================================
+  const totalRevenue = filteredTransactions
     .filter(t => t.status === 'success')
     .reduce((sum, t) => sum + t.amount, 0)
 
-  const totalPhotos = 156 // Mock data
+  const totalPhotos = filteredTransactions.filter(t => t.status === 'success').length
   const activeOutlets = outlets.filter(o => o.status === 'online').length
 
-  // Mock chart data
-  const chartData = [
-    { day: 'Mon', revenue: 2500000, photos: 45 },
-    { day: 'Tue', revenue: 3200000, photos: 52 },
-    { day: 'Wed', revenue: 2800000, photos: 48 },
-    { day: 'Thu', revenue: 3500000, photos: 58 },
-    { day: 'Fri', revenue: 4200000, photos: 72 },
-    { day: 'Sat', revenue: 5500000, photos: 95 },
-    { day: 'Sun', revenue: 4800000, photos: 82 },
-  ]
+  // ============================================
+  // Generate chart data dari transaksi real
+  // ============================================
+  const chartData = useMemo(() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const dayMap: Record<string, { revenue: number; photos: number }> = {}
+
+    // Init 7 hari terakhir
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const key = days[d.getDay()]
+      const dateKey = `${key}-${d.getDate()}`
+      dayMap[dateKey] = { revenue: 0, photos: 0 }
+    }
+
+    // Isi dengan data transaksi
+    filteredTransactions
+      .filter(t => t.status === 'success')
+      .forEach(t => {
+        const d = new Date(t.createdAt)
+        const now = new Date()
+        const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
+        if (diffDays <= 6) {
+          const key = `${days[d.getDay()]}-${d.getDate()}`
+          if (dayMap[key]) {
+            dayMap[key].revenue += t.amount
+            dayMap[key].photos += 1
+          }
+        }
+      })
+
+    // Convert ke array dengan label hari
+    return Object.entries(dayMap).map(([key, value]) => ({
+      day: key.split('-')[0],
+      revenue: value.revenue,
+      photos: value.photos,
+    }))
+  }, [filteredTransactions])
+
+  const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1)
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -50,8 +107,6 @@ export function ReportModule() {
       minimumFractionDigits: 0
     }).format(price)
   }
-
-  const maxRevenue = Math.max(...chartData.map(d => d.revenue))
 
   return (
     <div className="space-y-6">
@@ -126,7 +181,7 @@ export function ReportModule() {
             </div>
           </div>
           <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalPhotos}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Photos</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Sessions</p>
         </motion.div>
 
         <motion.div
@@ -168,25 +223,45 @@ export function ReportModule() {
         </motion.div>
       </div>
 
-      {/* Chart */}
+      {/* Weekly Revenue Chart */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border dark:border-gray-800"
       >
-        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Weekly Revenue</h2>
-        <div className="h-64 flex items-end justify-between gap-2">
-          {chartData.map((data, index) => (
-            <div key={data.day} className="flex-1 flex flex-col items-center gap-2">
-              <div 
-                className="w-full bg-purple-500 rounded-t-lg transition-all duration-300 hover:bg-purple-600"
-                style={{ height: `${(data.revenue / maxRevenue) * 100}%` }}
-              />
-              <span className="text-xs text-gray-500 dark:text-gray-400">{data.day}</span>
-            </div>
-          ))}
-        </div>
+        <h2 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Weekly Revenue</h2>
+
+        {chartData.every(d => d.revenue === 0) ? (
+          // Empty state kalau belum ada transaksi
+          <div className="h-64 flex flex-col items-center justify-center text-gray-400 dark:text-gray-600">
+            <BarChart3 className="w-12 h-12 mb-3 opacity-30" />
+            <p className="text-sm">Belum ada transaksi minggu ini</p>
+            <p className="text-xs mt-1 opacity-70">Data akan muncul setelah ada pembayaran berhasil</p>
+          </div>
+        ) : (
+          <div className="h-64 flex items-end justify-between gap-2">
+            {chartData.map((data) => (
+              <div key={data.day} className="flex-1 flex flex-col items-center gap-2">
+                <div className="w-full flex flex-col items-center justify-end" style={{ height: '220px' }}>
+                  {data.revenue > 0 && (
+                    <span className="text-xs text-gray-500 mb-1">
+                      {formatPrice(data.revenue).replace('Rp\u00a0', 'Rp ')}
+                    </span>
+                  )}
+                  <div
+                    className="w-full bg-purple-500 rounded-t-lg transition-all duration-500 hover:bg-purple-600 cursor-pointer"
+                    style={{
+                      height: `${Math.max((data.revenue / maxRevenue) * 180, data.revenue > 0 ? 4 : 0)}px`
+                    }}
+                    title={`${data.day}: ${formatPrice(data.revenue)}`}
+                  />
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{data.day}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       {/* Recent Transactions */}
@@ -197,44 +272,63 @@ export function ReportModule() {
         className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-sm border dark:border-gray-800"
       >
         <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Recent Transactions</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b dark:border-gray-800">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">ID</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Outlet</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Amount</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.slice(0, 5).map((tx) => (
-                <tr key={tx.id} className="border-b dark:border-gray-800 last:border-0">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">{tx.id}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
-                    {outlets.find(o => o.id === tx.outletId)?.name || 'Unknown'}
-                  </td>
-                  <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">{formatPrice(tx.amount)}</td>
-                  <td className="py-3 px-4">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      tx.status === 'success'
-                        ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                        : tx.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
-                      {tx.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(tx.createdAt).toLocaleDateString('id-ID')}
-                  </td>
+
+        {filteredTransactions.length === 0 ? (
+          <div className="text-center py-8 text-gray-400 dark:text-gray-600">
+            <p className="text-sm">Belum ada transaksi</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b dark:border-gray-800">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">ID</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Outlet</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Method</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredTransactions.slice(0, 10).map((tx) => (
+                  <tr key={tx.id} className="border-b dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="py-3 px-4 text-sm font-mono text-gray-900 dark:text-white">
+                      {tx.id.slice(0, 8)}...
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
+                      {outlets.find(o => o.id === tx.outletId)?.name || 'Unknown'}
+                    </td>
+                    <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">
+                      {formatPrice(tx.amount)}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400 uppercase">
+                      {tx.paymentMethod || '-'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        tx.status === 'success'
+                          ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                          : tx.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {tx.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(tx.createdAt).toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </motion.div>
     </div>
   )
