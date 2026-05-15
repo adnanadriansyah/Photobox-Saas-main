@@ -11,6 +11,7 @@
 .env.production.local
 .env.development.local
 .env.test.local
+env.production.example
 
 # ============================================================
 # DATABASE LOKAL
