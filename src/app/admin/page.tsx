@@ -20,14 +20,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-// ============================================
-// Admin Page Component — Premium Dark
-// ============================================
 export default function AdminPage() {
   const router = useRouter()
   const { activeModule, darkMode, branding } = useDashboardStore()
   const [isChecking, setIsChecking] = useState(true)
 
+  // ─── Session check ─────────────────────────────────────────
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -46,10 +44,14 @@ export default function AdminPage() {
     checkSession()
   }, [router])
 
+  // ─── Dark / Light mode sync ────────────────────────────────
   useEffect(() => {
-    // Always dark for premium look
-    document.documentElement.classList.add('dark')
-  }, [])
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [darkMode])
 
   const renderModule = () => {
     const map: Record<string, React.ReactNode> = {
@@ -67,9 +69,11 @@ export default function AdminPage() {
     return map[activeModule] ?? <DashboardOverview />
   }
 
+  // ─── Loading screen ────────────────────────────────────────
   if (isChecking) {
     return (
-      <div className="flex min-h-screen items-center justify-center"
+      <div
+        className="flex min-h-screen items-center justify-center"
         style={{ background: 'linear-gradient(135deg, #0f0f1a 0%, #1a0a2e 50%, #0d1117 100%)' }}
       >
         <motion.div
@@ -94,34 +98,53 @@ export default function AdminPage() {
     )
   }
 
+  // ─── Background values per mode ────────────────────────────
+  const bgGradient = darkMode
+    ? 'linear-gradient(135deg, #0f0f1a 0%, #1a0a2e 40%, #0d1117 100%)'
+    : 'linear-gradient(135deg, #f8f7ff 0%, #f0ebff 50%, #f5f3ff 100%)'
+
+  const gridColor = darkMode
+    ? 'rgba(255,255,255,0.5)'
+    : 'rgba(0,0,0,0.08)'
+
+  // ✅ FIX: Dihapus "as const" agar array bersifat mutable,
+  //         sesuai tipe yang diharapkan Framer Motion.
+  const blobOpacityDark  = [0.08, 0.13, 0.08]
+  const blobOpacityLight = [0.05, 0.09, 0.05]
+
   return (
     <div
-      className="flex h-screen overflow-hidden relative"
-      style={{ background: 'linear-gradient(135deg, #0f0f1a 0%, #1a0a2e 40%, #0d1117 100%)' }}
+      className="flex h-screen overflow-hidden relative transition-colors duration-500"
+      style={{ background: bgGradient }}
     >
-      {/* ── Background mesh gradient ──────────────────────────── */}
+      {/* ── Animated background blobs ─────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Primary color blob top-left */}
         <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.08, 0.13, 0.08] }}
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: darkMode ? blobOpacityDark : blobOpacityLight,
+          }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full blur-3xl"
           style={{ background: `radial-gradient(circle, ${branding.primaryColor}, transparent 65%)` }}
         />
-        {/* Secondary color blob bottom-right */}
         <motion.div
-          animate={{ scale: [1, 1.08, 1], opacity: [0.07, 0.11, 0.07] }}
+          animate={{
+            scale: [1, 1.08, 1],
+            opacity: darkMode ? [0.07, 0.11, 0.07] : [0.04, 0.08, 0.04],
+          }}
           transition={{ duration: 13, delay: 3, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl"
           style={{ background: `radial-gradient(circle, ${branding.secondaryColor}, transparent 65%)` }}
         />
+
         {/* Subtle grid */}
         <div
-          className="absolute inset-0 opacity-[0.025]"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)
+              linear-gradient(${gridColor} 1px, transparent 1px),
+              linear-gradient(90deg, ${gridColor} 1px, transparent 1px)
             `,
             backgroundSize: '48px 48px',
           }}
@@ -149,7 +172,7 @@ export default function AdminPage() {
         </main>
       </div>
 
-      <Toaster position="top-right" richColors theme="dark" />
+      <Toaster position="top-right" richColors theme={darkMode ? 'dark' : 'light'} />
     </div>
   )
 }
