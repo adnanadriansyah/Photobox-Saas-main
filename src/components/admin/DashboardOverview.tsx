@@ -115,7 +115,7 @@ function StatCard({ title, value, numericValue, change, positive, icon: Icon, gr
             className="w-12 h-12 rounded-xl flex items-center justify-center"
             style={{ background: `${glowColor}25`, boxShadow: `0 4px 16px ${glowColor}30` }}
           >
-            <Icon className="w-6 h-6 text-white" />
+            <Icon className="w-6 h-6 text-white dark:text-white" />
           </motion.div>
 
           {/* Change badge */}
@@ -126,8 +126,8 @@ function StatCard({ title, value, numericValue, change, positive, icon: Icon, gr
               transition={{ delay: index * 0.08 + 0.3 }}
               className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${
                 positive
-                  ? 'bg-emerald-500/15 text-emerald-400'
-                  : 'bg-red-500/15 text-red-400'
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-red-500/15 text-red-600 dark:text-red-400'
               }`}
             >
               {positive
@@ -140,18 +140,18 @@ function StatCard({ title, value, numericValue, change, positive, icon: Icon, gr
         </div>
 
         {/* Value */}
-        <p className="text-3xl font-black text-white mb-1 tracking-tight">
+        <p className="text-3xl font-black text-gray-900 dark:text-white mb-1 tracking-tight">
           {numericValue !== undefined
             ? <AnimatedNumber value={numericValue} prefix={prefix} suffix={suffix} />
             : value
           }
         </p>
-        <p className="text-sm text-white/50 font-medium">{title}</p>
+        <p className="text-sm text-gray-600 dark:text-white/50 font-medium">{title}</p>
 
         {/* Bottom activity bar */}
         <motion.div
           className="mt-4 h-1 rounded-full overflow-hidden"
-          style={{ background: 'rgba(255,255,255,0.08)' }}
+          style={{ background: 'rgba(0,0,0,0.08)' }}
         >
           <motion.div
             initial={{ width: 0 }}
@@ -188,10 +188,9 @@ function MiniCard({ icon: Icon, label, active, total, color, index }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       whileHover={{ y: -3 }}
-      className="relative rounded-2xl p-5 overflow-hidden"
+      className="relative rounded-2xl p-5 overflow-hidden bg-white/60 dark:bg-transparent"
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: `1px solid ${hovered ? color + '40' : 'rgba(255,255,255,0.07)'}`,
+        border: `1px solid ${hovered ? color + '40' : 'rgba(0,0,0,0.08)'}`,
         transition: 'border-color 0.25s',
       }}
     >
@@ -204,17 +203,17 @@ function MiniCard({ icon: Icon, label, active, total, color, index }: {
         >
           <span style={{ color }}><Icon className="w-[18px] h-[18px]" /></span>
         </motion.div>
-        <span className="text-sm font-medium text-white/50">{label}</span>
+        <span className="text-sm font-medium text-gray-500 dark:text-white/50">{label}</span>
       </div>
 
-      <p className="text-2xl font-black text-white mb-0.5">
+      <p className="text-2xl font-black text-gray-900 dark:text-white mb-0.5">
         <AnimatedNumber value={active} />{' '}
-        <span className="text-white/30 text-lg font-semibold">/ {total}</span>
+        <span className="text-gray-400 dark:text-white/30 text-lg font-semibold">/ {total}</span>
       </p>
-      <p className="text-xs text-white/35 mb-3">Active {label.toLowerCase()}</p>
+      <p className="text-xs text-gray-400 dark:text-white/35 mb-3">Active {label.toLowerCase()}</p>
 
       {/* Progress bar */}
-      <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+      <div className="h-1 rounded-full overflow-hidden bg-black/5 dark:bg-white/7">
         <motion.div
           initial={{ width: 0 }}
           animate={isInView ? { width: `${pct}%` } : {}}
@@ -239,20 +238,19 @@ function TxRow({ id, outlet, amount, status, index, formatPrice }: {
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.35, delay: 0.5 + index * 0.07, ease }}
-      className="flex items-center justify-between py-3 border-b last:border-0"
-      style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+      className="flex items-center justify-between py-3 border-b last:border-0 border-black/5 dark:border-white/6"
     >
       <div>
-        <p className="font-semibold text-white text-sm">{id}</p>
-        <p className="text-xs text-white/40 mt-0.5">{outlet}</p>
+        <p className="font-semibold text-gray-900 dark:text-white text-sm">{id}</p>
+        <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">{outlet}</p>
       </div>
       <div className="text-right">
-        <p className="font-bold text-white text-sm">{formatPrice(amount)}</p>
+        <p className="font-bold text-gray-900 dark:text-white text-sm">{formatPrice(amount)}</p>
         <motion.span
           className={`inline-block text-xs px-2 py-0.5 rounded-full mt-0.5 font-semibold ${
             status === 'success'
-              ? 'bg-emerald-500/15 text-emerald-400'
-              : 'bg-amber-500/15 text-amber-400'
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+              : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
           }`}
         >
           {status}
@@ -269,9 +267,9 @@ function BoothRow({ name, lastPhoto, status, index, formatTime }: {
   name: string; lastPhoto: string; status: string; index: number; formatTime: (s: string) => string
 }) {
   const statusConfig = {
-    online:  { icon: Wifi,        color: '#22c55e', bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: 'online'  },
-    offline: { icon: WifiOff,     color: '#6B7280', bg: 'bg-gray-500/15',    text: 'text-gray-400',    label: 'offline' },
-    error:   { icon: AlertCircle, color: '#ef4444', bg: 'bg-red-500/15',     text: 'text-red-400',     label: 'error'   },
+    online:  { icon: Wifi,        color: '#22c55e', bg: 'bg-emerald-500/15', text: 'text-emerald-600 dark:text-emerald-400', label: 'online'  },
+    offline: { icon: WifiOff,     color: '#6B7280', bg: 'bg-gray-500/15',    text: 'text-gray-500 dark:text-gray-400',       label: 'offline' },
+    error:   { icon: AlertCircle, color: '#ef4444', bg: 'bg-red-500/15',     text: 'text-red-600 dark:text-red-400',         label: 'error'   },
   }
   const cfg = statusConfig[status as keyof typeof statusConfig] || statusConfig.offline
   const StatusIcon = cfg.icon
@@ -281,8 +279,7 @@ function BoothRow({ name, lastPhoto, status, index, formatTime }: {
       initial={{ opacity: 0, x: 16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.35, delay: 0.55 + index * 0.07, ease }}
-      className="flex items-center justify-between py-3 border-b last:border-0"
-      style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+      className="flex items-center justify-between py-3 border-b last:border-0 border-black/5 dark:border-white/6"
     >
       <div className="flex items-center gap-3">
         <motion.div
@@ -292,8 +289,8 @@ function BoothRow({ name, lastPhoto, status, index, formatTime }: {
           <StatusIcon className="w-4 h-4" style={{ color: cfg.color }} />
         </motion.div>
         <div>
-          <p className="font-semibold text-white text-sm">{name}</p>
-          <p className="text-xs text-white/40 mt-0.5">Last photo: {formatTime(lastPhoto)}</p>
+          <p className="font-semibold text-gray-900 dark:text-white text-sm">{name}</p>
+          <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Last photo: {formatTime(lastPhoto)}</p>
         </div>
       </div>
       <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${cfg.bg} ${cfg.text} flex items-center gap-1.5`}>
@@ -331,8 +328,8 @@ function QuickAction({ icon: Icon, label, module, color, index }: {
       onClick={() => useDashboardStore.getState().setActiveModule(module)}
       className="relative flex flex-col items-center gap-3 p-5 rounded-2xl overflow-hidden text-center"
       style={{
-        background: hovered ? `${color}12` : 'rgba(255,255,255,0.03)',
-        border: `1.5px dashed ${hovered ? color + '60' : 'rgba(255,255,255,0.1)'}`,
+        background: hovered ? `${color}12` : 'rgba(0,0,0,0.02)',
+        border: `1.5px dashed ${hovered ? color + '60' : 'rgba(0,0,0,0.1)'}`,
         transition: 'background 0.2s, border-color 0.2s',
       }}
     >
@@ -344,7 +341,7 @@ function QuickAction({ icon: Icon, label, module, color, index }: {
       >
         <span style={{ color }}><Icon className="w-6 h-6" /></span>
       </motion.div>
-      <span className="text-sm font-semibold text-white/60 group-hover:text-white/80 transition-colors">{label}</span>
+      <span className="text-sm font-semibold text-gray-500 dark:text-white/60">{label}</span>
       <motion.div
         animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : 4 }}
         transition={{ duration: 0.2 }}
@@ -443,21 +440,21 @@ export function DashboardOverview() {
               animate={{ rotate: 360 }}
               transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
             >
-              <Zap className="w-4 h-4 text-purple-400" />
+              <Zap className="w-4 h-4 text-purple-500 dark:text-purple-400" />
             </motion.div>
-            <span className="text-xs font-bold uppercase tracking-widest text-purple-400">Live Dashboard</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-purple-500 dark:text-purple-400">Live Dashboard</span>
           </div>
-          <h1 className="text-2xl font-black text-white">Dashboard</h1>
-          <p className="text-white/40 text-sm mt-0.5">Welcome back! Here's your overview.</p>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-400 dark:text-white/40 text-sm mt-0.5">Welcome back! Here's your overview.</p>
         </div>
 
         {/* Live indicator */}
         <motion.div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-          style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#4ade80' }}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+          style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}
         >
           <motion.span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+            className="w-1.5 h-1.5 rounded-full bg-emerald-500"
             animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           />
@@ -487,17 +484,17 @@ export function DashboardOverview() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.45, ease }}
-          className="rounded-2xl p-6"
+          className="rounded-2xl p-6 bg-white/70 dark:bg-transparent"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(0,0,0,0.07)',
+            backdropFilter: 'blur(12px)',
           }}
         >
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-bold text-white">Recent Transactions</h2>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">Recent Transactions</h2>
             <motion.button
               whileHover={{ x: 3 }}
-              className="text-xs text-purple-400 font-semibold flex items-center gap-1"
+              className="text-xs text-purple-500 dark:text-purple-400 font-semibold flex items-center gap-1"
             >
               View all <ArrowRight className="w-3 h-3" />
             </motion.button>
@@ -522,15 +519,15 @@ export function DashboardOverview() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.52, ease }}
-          className="rounded-2xl p-6"
+          className="rounded-2xl p-6 bg-white/70 dark:bg-transparent"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(0,0,0,0.07)',
+            backdropFilter: 'blur(12px)',
           }}
         >
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-bold text-white">Booth Status</h2>
-            <span className="text-xs text-white/30 font-medium">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">Booth Status</h2>
+            <span className="text-xs text-gray-400 dark:text-white/30 font-medium">
               {boothStatuses.filter(b => b.status === 'online').length} online
             </span>
           </div>
@@ -554,13 +551,13 @@ export function DashboardOverview() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6, ease }}
-        className="rounded-2xl p-6"
+        className="rounded-2xl p-6 bg-white/70 dark:bg-transparent"
         style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(0,0,0,0.07)',
+          backdropFilter: 'blur(12px)',
         }}
       >
-        <h2 className="text-base font-bold text-white mb-5">Quick Actions</h2>
+        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-5">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {quickActions.map((action, i) => (
             <QuickAction key={action.label} {...action} index={i} />
