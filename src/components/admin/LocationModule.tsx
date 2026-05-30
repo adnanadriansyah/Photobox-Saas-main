@@ -59,92 +59,101 @@ function LocationForm({ outlet, onClose, onSubmit }: LocationFormProps) {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md"
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b dark:border-gray-800">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-800 shrink-0">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {outlet ? 'Edit Location' : 'Add Location'}
           </h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Location Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Address</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Pick Location on Map</label>
-            <div className="space-y-2">
-              <div className="relative w-full h-64 rounded-lg overflow-hidden border dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
-                <iframe
-                  id="map-embed"
-                  className="w-full h-full"
-                  src={formData.mapsUrl || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126748.56398935027!2d106.698688671875!3d-6.208763868808566!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f5390917b5c7%3A0x2e69f5390917b5c7!2sJakarta!5e0!3m2!1sen!2sid!4v1620000000000!5m2!1sen!2sid"}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  window.open('https://www.google.com/maps', '_blank')
-                }}
-                className="w-full px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center gap-2"
-              >
-                <MapPin className="w-4 h-4" />
-                Open Google Maps to Select Location
-              </button>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                1. Click button above to open Google Maps{String.fromCharCode(10)}
-                2. Navigate to your desired location{String.fromCharCode(10)}
-                3. Click Share {'->'} Embed a map{String.fromCharCode(10)}
-                4. Copy the src URL and paste below
-              </p>
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Location Name
+              </label>
               <input
-                type="url"
-                value={formData.mapsUrl}
-                onChange={(e) => setFormData({ ...formData, mapsUrl: e.target.value })}
-                placeholder="Paste Google Maps embed URL here..."
-                className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 required
               />
             </div>
+
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Address
+              </label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Pick Location on Map
+              </label>
+              <div className="space-y-2">
+                <div className="relative w-full h-48 rounded-xl overflow-hidden border dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                  <iframe
+                    id="map-embed"
+                    className="w-full h-full"
+                    src={formData.mapsUrl || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126748.56398935027!2d106.698688671875!3d-6.208763868808566!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f5390917b5c7%3A0x2e69f5390917b5c7!2sJakarta!5e0!3m2!1sen!2sid!4v1620000000000!5m2!1sen!2sid"}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.open('https://www.google.com/maps', '_blank')}
+                  className="w-full px-4 py-2.5 rounded-xl bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Open Google Maps
+                </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  1. Click button above to open Google Maps{String.fromCharCode(10)}
+                  2. Navigate to your desired location{String.fromCharCode(10)}
+                  3. Click Share {'->'} Embed a map{String.fromCharCode(10)}
+                  4. Copy the src URL and paste below
+                </p>
+                <input
+                  type="url"
+                  value={formData.mapsUrl}
+                  onChange={(e) => setFormData({ ...formData, mapsUrl: e.target.value })}
+                  placeholder="Paste Google Maps embed URL here..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                  required
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex gap-2 pt-4">
+          {/* Footer */}
+          <div className="px-6 py-4 border-t dark:border-gray-800 flex gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="flex-1 px-4 py-2.5 rounded-xl border dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors"
             >
-              <span className="text-gray-900 dark:text-white">Cancel</span>
+              Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/25"
             >
               {outlet ? 'Update' : 'Create'}
             </button>
