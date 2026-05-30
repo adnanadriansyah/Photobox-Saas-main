@@ -142,7 +142,7 @@ export default function FeaturesPage() {
               </span>
             </h1>
             
-            <p className="text-xl text-white/80 leading-relaxed">
+            <p className="text-xl text-white/60 leading-relaxed">
               Teknologi terdepan untuk pengalaman photo booth yang tak terlupakan. 
               Semua yang Anda butuhkan untuk bisnis photo booth profesional.
             </p>
@@ -175,12 +175,12 @@ export default function FeaturesPage() {
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
                   <h2 className="text-3xl font-bold text-white mb-4">{feature.title}</h2>
-                  <p className="text-lg text-white/80 mb-6">{feature.description}</p>
+                  <p className="text-lg text-white/60 mb-6">{feature.description}</p>
                   <ul className="space-y-3">
                     {feature.benefits.map((benefit, i) => (
                       <li key={i} className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-white/90">{benefit}</span>
+                        <span className="text-white/80">{benefit}</span>
                       </li>
                     ))}
                   </ul>
@@ -211,7 +211,7 @@ export default function FeaturesPage() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl font-bold text-white mb-4">Fitur Lainnya</h2>
-            <p className="text-xl text-white/80">Dan masih banyak lagi fitur yang mendukung bisnis Anda</p>
+            <p className="text-xl text-white/60">Dan masih banyak lagi fitur yang mendukung bisnis Anda</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -232,7 +232,7 @@ export default function FeaturesPage() {
                   <feature.icon className="w-6 h-6" style={{ color: branding.primaryColor }} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-white/80">{feature.description}</p>
+                <p className="text-white/60">{feature.description}</p>
               </motion.div>
             ))}
           </div>

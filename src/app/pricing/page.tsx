@@ -139,7 +139,7 @@ export default function PricingPage() {
               </span>
             </h1>
             
-            <p className="text-xl text-white/80 leading-relaxed">
+            <p className="text-xl text-white/60 leading-relaxed">
               Tidak ada biaya tersembunyi. Pilih paket yang sesuai dengan skala bisnis Anda 
               dan tingkatkan kapan saja.
             </p>
@@ -184,16 +184,16 @@ export default function PricingPage() {
                 </div>
 
                 <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                <p className="text-white/70 mb-4">{plan.description}</p>
+                <p className="text-white/50 mb-4">{plan.description}</p>
                 
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-white">{plan.price}</span>
-                  {plan.period && <span className="text-white/70">{plan.period}</span>}
+                  {plan.period && <span className="text-white/50">{plan.period}</span>}
                 </div>
                 
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2 text-white/80">
+                      <li key={i} className="flex items-center gap-2 text-white/60">
                       <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                       <span>{feature}</span>
                     </li>
@@ -230,7 +230,7 @@ export default function PricingPage() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl font-bold text-white mb-4">Add-On & Ekstra</h2>
-            <p className="text-xl text-white/80">Fitur tambahan untuk melengkapi paket Anda</p>
+            <p className="text-xl text-white/60">Fitur tambahan untuk melengkapi paket Anda</p>
           </motion.div>
 
           <div className="grid md:grid-cols-4 gap-6">
@@ -245,7 +245,7 @@ export default function PricingPage() {
               >
                 <h3 className="text-xl font-semibold text-white mb-2">{addOn.name}</h3>
                 <p className="text-2xl font-bold text-purple-400 mb-2">{addOn.price}</p>
-                <p className="text-white/80">{addOn.description}</p>
+                <p className="text-white/60">{addOn.description}</p>
               </motion.div>
             ))}
           </div>
@@ -292,7 +292,7 @@ export default function PricingPage() {
                 className="glass rounded-xl p-6"
               >
                 <h3 className="font-semibold text-white mb-2">{faq.q}</h3>
-                <p className="text-white/80">{faq.a}</p>
+                <p className="text-white/60">{faq.a}</p>
               </motion.div>
             ))}
           </div>

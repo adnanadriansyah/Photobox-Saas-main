@@ -76,7 +76,7 @@ export default function LocationsPage() {
               </span>
             </h1>
             
-            <p className="text-xl text-white/80 leading-relaxed">
+            <p className="text-xl text-white/60 leading-relaxed">
               {onlineCount}+ outlet aktif di seluruh Indonesia. Temukan lokasi SnapNext terdekat dari Anda.
             </p>
           </motion.div>
@@ -106,7 +106,7 @@ export default function LocationsPage() {
             {/* Map Overlay Info */}
             <div className="absolute top-4 left-4 glass-strong rounded-xl p-4 max-w-xs">
               <h3 className="font-semibold text-white mb-2 text-sm">Cara Menggunakan</h3>
-               <ul className="text-xs text-white/80 space-y-1">
+              <ul className="text-xs text-white/60 space-y-1">
                 <li>• Klik marker untuk melihat detail lokasi</li>
                 <li>• Gunakan tombol navigasi untuk arah</li>
                 <li>• Zoom in/out untuk melihat area lebih detail</li>
@@ -122,7 +122,7 @@ export default function LocationsPage() {
                   className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: branding.primaryColor }}
                 />
-                <span className="text-xs text-white/80">Lokasi Aktif</span>
+                <span className="text-xs text-white/60">Lokasi Aktif</span>
               </div>
             </div>
           </motion.div>
@@ -135,7 +135,7 @@ export default function LocationsPage() {
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Cari lokasi..."
@@ -155,7 +155,7 @@ export default function LocationsPage() {
                 className={`px-4 py-3 rounded-xl font-medium transition-all ${
                   statusFilter === 'all'
                     ? 'text-white'
-                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
                 }`}
                 style={{
                   background: statusFilter === 'all' ? `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` : undefined
@@ -168,7 +168,7 @@ export default function LocationsPage() {
                 className={`px-4 py-3 rounded-xl font-medium transition-all ${
                   statusFilter === 'online'
                     ? 'bg-green-500 text-white'
-                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 Online
@@ -178,7 +178,7 @@ export default function LocationsPage() {
                 className={`px-4 py-3 rounded-xl font-medium transition-all ${
                   statusFilter === 'offline'
                     ? 'bg-gray-500 text-white'
-                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 Offline
@@ -212,7 +212,7 @@ export default function LocationsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-semibold text-white">{outlet.name}</h3>
-                    <p className="text-white/70 mt-1">{outlet.location}</p>
+                    <p className="text-white/50 mt-1">{outlet.location}</p>
                   </div>
                   <span 
                     className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -228,11 +228,11 @@ export default function LocationsPage() {
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-2 text-white/70">
+                  <div className="flex items-center gap-2 text-white/50">
                     <MapPin className="w-4 h-4" style={{ color: branding.primaryColor }} />
                     <span className="text-sm">{outlet.location}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-white/70">
+                  <div className="flex items-center gap-2 text-white/50">
                     <Clock className="w-4 h-4" style={{ color: branding.primaryColor }} />
                     <span className="text-sm">10:00 - 22:00</span>
                   </div>
@@ -278,7 +278,7 @@ export default function LocationsPage() {
           {filteredOutlets.length === 0 && (
             <div className="text-center py-12">
               <MapPin className="w-12 h-12 text-white/20 mx-auto mb-4" />
-              <p className="text-white/70">Tidak ada lokasi yang ditemukan</p>
+              <p className="text-white/50">Tidak ada lokasi yang ditemukan</p>
             </div>
           )}
         </div>
