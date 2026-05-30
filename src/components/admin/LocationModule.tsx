@@ -59,54 +59,52 @@ function LocationForm({ outlet, onClose, onSubmit }: LocationFormProps) {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col"
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-800 shrink-0">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-800 shrink-0">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
             {outlet ? 'Edit Location' : 'Add Location'}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
-        {/* Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             <div>
-              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Location Name
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Address
               </label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Pick Location on Map
               </label>
               <div className="space-y-2">
-                <div className="relative w-full h-48 rounded-xl overflow-hidden border dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                <div className="relative w-full h-36 rounded-xl overflow-hidden border dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
                   <iframe
                     id="map-embed"
                     className="w-full h-full"
@@ -119,41 +117,34 @@ function LocationForm({ outlet, onClose, onSubmit }: LocationFormProps) {
                 <button
                   type="button"
                   onClick={() => window.open('https://www.google.com/maps', '_blank')}
-                  className="w-full px-4 py-2.5 rounded-xl bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
                 >
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-3.5 h-3.5" />
                   Open Google Maps
                 </button>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                  1. Click button above to open Google Maps{String.fromCharCode(10)}
-                  2. Navigate to your desired location{String.fromCharCode(10)}
-                  3. Click Share {'->'} Embed a map{String.fromCharCode(10)}
-                  4. Copy the src URL and paste below
-                </p>
                 <input
                   type="url"
                   value={formData.mapsUrl}
                   onChange={(e) => setFormData({ ...formData, mapsUrl: e.target.value })}
                   placeholder="Paste Google Maps embed URL here..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                   required
                 />
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t dark:border-gray-800 flex gap-3 shrink-0">
+          <div className="px-4 py-3 border-t dark:border-gray-800 flex gap-2 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl border dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+              className="flex-1 px-4 py-2 rounded-xl border dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/25"
+              className="flex-1 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors"
             >
               {outlet ? 'Update' : 'Create'}
             </button>
