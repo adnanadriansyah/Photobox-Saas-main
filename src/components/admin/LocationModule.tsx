@@ -29,7 +29,8 @@ function LocationForm({ outlet, onClose, onSubmit }: LocationFormProps) {
   const [formData, setFormData] = useState({
     name: outlet?.name || '',
     location: outlet?.location || '',
-    mapsUrl: outlet?.mapsUrl || ''
+    mapsUrl: outlet?.mapsUrl || '',
+    status: outlet?.status || 'online'
   })
 
   // Update form when outlet prop changes (for edit mode)
@@ -37,7 +38,8 @@ function LocationForm({ outlet, onClose, onSubmit }: LocationFormProps) {
     setFormData({
       name: outlet?.name || '',
       location: outlet?.location || '',
-      mapsUrl: outlet?.mapsUrl || ''
+      mapsUrl: outlet?.mapsUrl || '',
+      status: outlet?.status || 'online'
     })
   }, [outlet])
 
@@ -130,6 +132,32 @@ function LocationForm({ outlet, onClose, onSubmit }: LocationFormProps) {
                   className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                   required
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Status
+              </label>
+              <div className="flex gap-1.5">
+                {(['online', 'offline', 'error'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: s })}
+                    className={`flex-1 px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all ${
+                      formData.status === s
+                        ? s === 'online'
+                          ? 'bg-green-500 text-white shadow-sm'
+                          : s === 'offline'
+                          ? 'bg-gray-400 text-white dark:bg-gray-500 shadow-sm'
+                          : 'bg-red-500 text-white shadow-sm'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
