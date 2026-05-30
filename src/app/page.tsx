@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { 
   Camera, 
   MapPin, 
@@ -27,6 +27,61 @@ import { Footer } from '@/components/landing/Footer'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
+function FloatingOrb({ size, x, y, color, delay, duration }: {
+  size: number; x: number; y: number; color: string; delay: number; duration: number
+}) {
+  return (
+    <motion.div
+      className="absolute rounded-full blur-3xl pointer-events-none"
+      style={{
+        width: size, height: size,
+        left: `${x}%`, top: `${y}%`,
+        background: `radial-gradient(circle, ${color}, transparent 70%)`,
+      }}
+      animate={{
+        x: [0, 30, -20, 0],
+        y: [0, -30, 20, 0],
+        scale: [1, 1.15, 0.9, 1],
+        opacity: [0.15, 0.25, 0.15, 0.15],
+      }}
+      transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
+    />
+  )
+}
+
+function ParticleField({ count = 30 }: { count?: number }) {
+  const particles = Array.from({ length: count }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 3 + 1,
+    delay: Math.random() * 5,
+    duration: Math.random() * 4 + 3,
+  }))
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{
+            left: `${p.x}%`, top: `${p.y}%`,
+            width: p.size, height: p.size,
+            backgroundColor: p.id % 3 === 0 ? '#a855f7' : p.id % 3 === 1 ? '#ec4899' : '#6366f1',
+          }}
+          animate={{
+            y: [0, -40, 0, 20, 0],
+            opacity: [0, 0.6, 0.2, 0.6, 0],
+            scale: [0, 1, 0.5, 1, 0],
+          }}
+          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function PolaroidStack() {
   const photos = [
     { rotate: -8, y: 0, src: 'https://picsum.photos/seed/p1/400/500', label: 'Event Photo', z: 10, x: -20 },
@@ -38,7 +93,7 @@ function PolaroidStack() {
     <div className="relative w-full h-[500px] flex items-center justify-center">
       <motion.div
         className="absolute inset-0"
-        animate={{ scale: [1, 1.08, 1], opacity: [0.12, 0.2, 0.12] }}
+        animate={{ scale: [1, 1.08, 1], opacity: [0.15, 0.25, 0.15] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
         style={{
           background: 'radial-gradient(circle at 50% 50%, #a855f7 0%, transparent 60%)',
@@ -100,7 +155,12 @@ function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: strin
   }, [isInView, value])
 
   return (
-    <motion.span ref={ref} initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} className="tabular-nums">
+    <motion.span
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      className="tabular-nums"
+    >
       {displayed.toLocaleString('id-ID')}{suffix}
     </motion.span>
   )
@@ -169,15 +229,19 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      <FloatingOrb size={600} x={-10} y={10} color="#a855f7" delay={0} duration={10} />
+      <FloatingOrb size={500} x={70} y={60} color="#ec4899" delay={2} duration={12} />
+      <FloatingOrb size={400} x={80} y={-5} color="#6366f1" delay={4} duration={8} />
+      <FloatingOrb size={300} x={20} y={70} color="#a855f7" delay={1} duration={9} />
+
       <Navbar />
 
       {/* ============================== */}
-      {/* HERO                          */}
+      {/* HERO SECTION                   */}
       {/* ============================== */}
       <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-950/20 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#a855f7_0%,transparent_50%),radial-gradient(ellipse_at_bottom_left,#ec4899_0%,transparent_50%)] opacity-15 pointer-events-none" />
+        <ParticleField count={40} />
 
         <div className="max-w-7xl mx-auto px-4 w-full relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -304,11 +368,10 @@ export default function HomePage() {
       </section>
 
       {/* ============================== */}
-      {/* STATS                          */}
+      {/* STATS SECTION                  */}
       {/* ============================== */}
       <section className="py-20 px-4 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-950/10 to-transparent pointer-events-none" />
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -325,10 +388,10 @@ export default function HomePage() {
       </section>
 
       {/* ============================== */}
-      {/* FEATURES                       */}
+      {/* FEATURES SECTION               */}
       {/* ============================== */}
       <section className="py-24 px-4 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-pink-950/10 to-transparent pointer-events-none" />
+        <ParticleField count={20} />
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -385,10 +448,10 @@ export default function HomePage() {
       </section>
 
       {/* ============================== */}
-      {/* LOCATIONS                      */}
+      {/* LOCATIONS SECTION              */}
       {/* ============================== */}
       <section className="py-24 px-4 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-950/10 to-transparent pointer-events-none" />
+        <FloatingOrb size={400} x={60} y={30} color="#a855f7" delay={1} duration={11} />
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -518,9 +581,10 @@ export default function HomePage() {
       </section>
 
       {/* ============================== */}
-      {/* CTA                            */}
+      {/* CTA SECTION                    */}
       {/* ============================== */}
       <section className="py-24 px-4 relative">
+        <ParticleField count={25} />
         <div className="max-w-4xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -531,6 +595,9 @@ export default function HomePage() {
               background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
             }}
           >
+            <FloatingOrb size={300} x={80} y={-10} color="white" delay={0} duration={6} />
+            <FloatingOrb size={200} x={-10} y={80} color="white" delay={2} duration={8} />
+
             <div className="absolute inset-0 opacity-10">
               <svg className="w-full h-full">
                 <defs>

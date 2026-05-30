@@ -37,7 +37,7 @@ export default function TestimonialsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a1a' }}>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       
       {/* Hero Section */}
@@ -59,7 +59,7 @@ export default function TestimonialsPage() {
               <span>Testimoni Pelanggan</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Apa Kata{' '}
               <span 
                 style={{
@@ -72,7 +72,7 @@ export default function TestimonialsPage() {
               </span>
             </h1>
             
-            <p className="text-xl text-white/60 leading-relaxed">
+            <p className="text-xl text-gray-600 leading-relaxed">
               Dengarkan pengalaman nyata dari pelanggan yang telah menggunakan SnapNext 
               untuk berbagai event dan aktivasi.
             </p>
@@ -87,7 +87,7 @@ export default function TestimonialsPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-strong rounded-3xl p-8 md:p-12 relative"
+              className="bg-white rounded-3xl p-8 md:p-12 shadow-lg relative"
             >
               {/* Quote Icon */}
               <div 
@@ -113,7 +113,7 @@ export default function TestimonialsPage() {
                 </div>
                 
                 {/* Quote */}
-                <blockquote className="text-2xl md:text-3xl text-white/80 mb-8 leading-relaxed">
+                <blockquote className="text-2xl md:text-3xl text-gray-700 mb-8 leading-relaxed">
                   "{approvedTestimonials[activeTestimonial]?.comment}"
                 </blockquote>
                 
@@ -128,13 +128,13 @@ export default function TestimonialsPage() {
                     {approvedTestimonials[activeTestimonial]?.customerName.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-gray-900">
                       {approvedTestimonials[activeTestimonial]?.customerName}
                     </p>
-                    <p className="text-sm text-white/50">
+                    <p className="text-sm text-gray-500">
                       {getOutletName(approvedTestimonials[activeTestimonial]?.outletId)}
                     </p>
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-gray-400">
                       {formatDate(approvedTestimonials[activeTestimonial]?.createdAt)}
                     </p>
                   </div>
@@ -148,17 +148,17 @@ export default function TestimonialsPage() {
                     onClick={() => setActiveTestimonial(prev => 
                       prev === 0 ? approvedTestimonials.length - 1 : prev - 1
                     )}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 glass-strong rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
                   >
-                    <ChevronLeft className="w-6 h-6 text-white/60" />
+                    <ChevronLeft className="w-6 h-6 text-gray-600" />
                   </button>
                   <button
                     onClick={() => setActiveTestimonial(prev => 
                       (prev + 1) % approvedTestimonials.length
                     )}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 glass-strong rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
                   >
-                    <ChevronRight className="w-6 h-6 text-white/60" />
+                    <ChevronRight className="w-6 h-6 text-gray-600" />
                   </button>
                 </>
               )}
@@ -173,7 +173,7 @@ export default function TestimonialsPage() {
                       className={`w-3 h-3 rounded-full transition-colors ${
                         index === activeTestimonial
                           ? 'bg-purple-600'
-                          : 'bg-white/20 hover:bg-white/40'
+                          : 'bg-gray-300 hover:bg-gray-400'
                       }`}
                       style={{
                         backgroundColor: index === activeTestimonial ? branding.primaryColor : undefined
@@ -188,7 +188,7 @@ export default function TestimonialsPage() {
       )}
 
       {/* All Testimonials Grid */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -196,8 +196,8 @@ export default function TestimonialsPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold text-white mb-4">Semua Testimoni</h2>
-            <p className="text-xl text-white/60">Lebih banyak cerita dari pelanggan kami</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Semua Testimoni</h2>
+            <p className="text-xl text-gray-600">Lebih banyak cerita dari pelanggan kami</p>
           </motion.div>
 
           {approvedTestimonials.length > 0 ? (
@@ -210,7 +210,7 @@ export default function TestimonialsPage() {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -5 }}
-                  className="glass rounded-2xl p-6 hover:border-purple-500/30 transition-all"
+                  className="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-all"
                 >
                   {/* Stars */}
                   <div className="flex items-center gap-1 mb-4">
@@ -227,12 +227,12 @@ export default function TestimonialsPage() {
                   </div>
 
                   {/* Quote */}
-                  <p className="text-white/70 mb-4 line-clamp-4">
+                  <p className="text-gray-700 mb-4 line-clamp-4">
                     "{testimonial.comment}"
                   </p>
 
                   {/* Author */}
-                  <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                  <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
                     <div 
                       className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
                       style={{ 
@@ -242,10 +242,10 @@ export default function TestimonialsPage() {
                       {testimonial.customerName.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm">
+                      <p className="font-semibold text-gray-900 text-sm">
                         {testimonial.customerName}
                       </p>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-gray-500">
                         {getOutletName(testimonial.outletId)}
                       </p>
                     </div>
@@ -255,8 +255,8 @@ export default function TestimonialsPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <MessageSquare className="w-12 h-12 text-white/20 mx-auto mb-4" />
-              <p className="text-white/50">Belum ada testimoni yang tersedia</p>
+              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Belum ada testimoni yang tersedia</p>
             </div>
           )}
         </div>
@@ -278,7 +278,7 @@ export default function TestimonialsPage() {
               >
                 4.8
               </div>
-              <p className="text-white/60">Rating Rata-rata</p>
+              <p className="text-gray-600">Rating Rata-rata</p>
             </div>
             <div className="text-center">
               <div 
@@ -287,7 +287,7 @@ export default function TestimonialsPage() {
               >
                 150+
               </div>
-              <p className="text-white/60">Testimoni</p>
+              <p className="text-gray-600">Testimoni</p>
             </div>
             <div className="text-center">
               <div 
@@ -296,7 +296,7 @@ export default function TestimonialsPage() {
               >
                 98%
               </div>
-              <p className="text-white/60">Kepuasan</p>
+              <p className="text-gray-600">Kepuasan</p>
             </div>
             <div className="text-center">
               <div 
@@ -305,14 +305,14 @@ export default function TestimonialsPage() {
               >
                 50+
               </div>
-              <p className="text-white/60">Event Sukses</p>
+              <p className="text-gray-600">Event Sukses</p>
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-white">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
