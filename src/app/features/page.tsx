@@ -107,7 +107,7 @@ export default function FeaturesPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#0a0a1a' }}>
       <Navbar />
       
       {/* Hero Section */}
@@ -129,7 +129,7 @@ export default function FeaturesPage() {
               <span>Fitur Lengkap</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Fitur{' '}
               <span 
                 style={{
@@ -142,7 +142,7 @@ export default function FeaturesPage() {
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="text-xl text-white/60 leading-relaxed">
               Teknologi terdepan untuk pengalaman photo booth yang tak terlupakan. 
               Semua yang Anda butuhkan untuk bisnis photo booth profesional.
             </p>
@@ -174,18 +174,18 @@ export default function FeaturesPage() {
                   >
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">{feature.title}</h2>
-                  <p className="text-lg text-gray-600 mb-6">{feature.description}</p>
+                  <h2 className="text-3xl font-bold text-white mb-4">{feature.title}</h2>
+                  <p className="text-lg text-white/60 mb-6">{feature.description}</p>
                   <ul className="space-y-3">
                     {feature.benefits.map((benefit, i) => (
                       <li key={i} className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-700">{benefit}</span>
+                        <span className="text-white/80">{benefit}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className={`bg-white rounded-2xl p-8 shadow-lg ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                <div className={`glass-strong rounded-2xl p-8 ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
                   <div 
                     className="aspect-video rounded-xl flex items-center justify-center"
                     style={{ 
@@ -202,7 +202,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* Additional Features Grid */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -210,8 +210,8 @@ export default function FeaturesPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Fitur Lainnya</h2>
-            <p className="text-xl text-gray-600">Dan masih banyak lagi fitur yang mendukung bisnis Anda</p>
+            <h2 className="text-3xl font-bold text-white mb-4">Fitur Lainnya</h2>
+            <p className="text-xl text-white/60">Dan masih banyak lagi fitur yang mendukung bisnis Anda</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -223,7 +223,7 @@ export default function FeaturesPage() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -5 }}
-                className="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-all"
+                className="glass rounded-2xl p-6 hover:border-purple-500/30 transition-all"
               >
                 <div 
                   className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
@@ -231,8 +231,8 @@ export default function FeaturesPage() {
                 >
                   <feature.icon className="w-6 h-6" style={{ color: branding.primaryColor }} />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-white/60">{feature.description}</p>
               </motion.div>
             ))}
           </div>

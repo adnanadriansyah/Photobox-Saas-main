@@ -104,7 +104,7 @@ export default function PricingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#0a0a1a' }}>
       <Navbar />
       
       {/* Hero Section */}
@@ -126,7 +126,7 @@ export default function PricingPage() {
               <span>Harga Transparan</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Pilih Paket{' '}
               <span 
                 style={{
@@ -139,7 +139,7 @@ export default function PricingPage() {
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="text-xl text-white/60 leading-relaxed">
               Tidak ada biaya tersembunyi. Pilih paket yang sesuai dengan skala bisnis Anda 
               dan tingkatkan kapan saja.
             </p>
@@ -157,13 +157,12 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className={`bg-white rounded-2xl p-8 shadow-lg relative ${
-                  plan.popular ? 'ring-2 scale-105' : ''
+                className={`glass-strong rounded-2xl p-8 relative ${
+                  plan.popular ? 'scale-105' : ''
                 }`}
                 style={{
                   borderColor: plan.popular ? branding.primaryColor : undefined,
-                  // @ts-ignore - ringColor prop for motion
-                  ringColor: plan.popular ? branding.primaryColor : undefined
+                  boxShadow: plan.popular ? `0 0 30px ${branding.primaryColor}30` : undefined
                 }}
               >
                 {plan.popular && (
@@ -184,17 +183,17 @@ export default function PricingPage() {
                   <plan.icon className="w-7 h-7 text-white" />
                 </div>
 
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-gray-500 mb-4">{plan.description}</p>
+                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                <p className="text-white/50 mb-4">{plan.description}</p>
                 
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                  {plan.period && <span className="text-gray-500">{plan.period}</span>}
+                  <span className="text-4xl font-bold text-white">{plan.price}</span>
+                  {plan.period && <span className="text-white/50">{plan.period}</span>}
                 </div>
                 
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-2 text-gray-600">
+                      <li key={i} className="flex items-center gap-2 text-white/60">
                       <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                       <span>{feature}</span>
                     </li>
@@ -205,7 +204,7 @@ export default function PricingPage() {
                   className={`w-full py-3 rounded-xl font-semibold transition-all ${
                     plan.popular
                       ? 'text-white hover:opacity-90'
-                      : 'border-2 hover:bg-gray-50'
+                      : 'border hover:bg-white/5'
                   }`}
                   style={{
                     background: plan.popular ? `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` : undefined,
@@ -222,7 +221,7 @@ export default function PricingPage() {
       </section>
 
       {/* Add-ons Section */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -230,29 +229,23 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Add-ons & Tambahan</h2>
-            <p className="text-xl text-gray-600">Butuh lebih banyak? Tambahkan fitur sesuai kebutuhan</p>
+            <h2 className="text-3xl font-bold text-white mb-4">Add-On & Ekstra</h2>
+            <p className="text-xl text-white/60">Fitur tambahan untuk melengkapi paket Anda</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {addOns.map((addon, index) => (
+          <div className="grid md:grid-cols-4 gap-6">
+            {addOns.map((addOn, index) => (
               <motion.div
-                key={addon.name}
+                key={addOn.name}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-all"
+                className="glass rounded-2xl p-6 hover:border-purple-500/30 transition-all"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{addon.name}</h3>
-                <p className="text-gray-600 text-sm mb-4">{addon.description}</p>
-                <p 
-                  className="text-xl font-bold"
-                  style={{ color: branding.primaryColor }}
-                >
-                  {addon.price}
-                </p>
+                <h3 className="text-xl font-semibold text-white mb-2">{addOn.name}</h3>
+                <p className="text-2xl font-bold text-purple-400 mb-2">{addOn.price}</p>
+                <p className="text-white/60">{addOn.description}</p>
               </motion.div>
             ))}
           </div>
@@ -268,7 +261,7 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Pertanyaan Umum</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">Pertanyaan Umum</h2>
           </motion.div>
 
           <div className="space-y-4">
@@ -296,10 +289,10 @@ export default function PricingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl p-6 shadow-sm"
+                className="glass rounded-xl p-6"
               >
-                <h3 className="font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                <p className="text-gray-600">{faq.a}</p>
+                <h3 className="font-semibold text-white mb-2">{faq.q}</h3>
+                <p className="text-white/60">{faq.a}</p>
               </motion.div>
             ))}
           </div>
