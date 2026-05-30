@@ -14,6 +14,9 @@ import { useDashboardStore } from '@/lib/stores/dashboard-store'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
+// ============================================
+// Magnetic Nav Link — 3D tilt + spotlight glow
+// ============================================
 function MagneticNavLink({
   href,
   label,
@@ -81,15 +84,17 @@ function MagneticNavLink({
       }}
       className="relative px-4 py-2 rounded-xl text-sm font-medium select-none cursor-pointer overflow-hidden"
     >
+      {/* Active sliding pill */}
       {isActive && (
         <motion.span
           layoutId="nav-active-pill"
           className="absolute inset-0 rounded-xl"
-          style={{ backgroundColor: `${primaryColor}20` }}
+          style={{ backgroundColor: `${primaryColor}14` }}
           transition={{ type: 'spring', stiffness: 380, damping: 32 }}
         />
       )}
 
+      {/* Spotlight hover glow */}
       <AnimatePresence>
         {hovered && !isActive && (
           <motion.span
@@ -99,20 +104,22 @@ function MagneticNavLink({
             transition={{ duration: 0.15 }}
             className="absolute inset-0 rounded-xl pointer-events-none"
             style={{
-              background: `radial-gradient(circle at ${spotPos.x}% ${spotPos.y}%, ${primaryColor}30 0%, transparent 70%)`,
+              background: `radial-gradient(circle at ${spotPos.x}% ${spotPos.y}%, ${primaryColor}22 0%, transparent 70%)`,
             }}
           />
         )}
       </AnimatePresence>
 
+      {/* Label */}
       <motion.span
         className="relative z-10 block"
-        animate={{ color: isActive ? '#fff' : hovered ? '#fff' : 'rgba(255,255,255,0.65)' }}
+        animate={{ color: isActive ? primaryColor : hovered ? '#111827' : '#4B5563' }}
         transition={{ duration: 0.2 }}
       >
         {label}
       </motion.span>
 
+      {/* Gradient underline on hover (non-active) */}
       <motion.span
         className="absolute bottom-1 left-4 right-4 h-0.5 rounded-full origin-left"
         initial={{ scaleX: 0 }}
@@ -124,6 +131,9 @@ function MagneticNavLink({
   )
 }
 
+// ============================================
+// Cinematic Dropdown Item — blur-in + sweep
+// ============================================
 function DropdownItem({
   href,
   icon: Icon,
@@ -156,14 +166,16 @@ function DropdownItem({
       transition={{ duration: 0.28, delay: 0.06 + index * 0.07, ease }}
       className="relative flex items-center gap-3 px-4 py-3.5 overflow-hidden group"
     >
+      {/* Hover background sweep */}
       <motion.span
         className="absolute inset-0"
         initial={{ scaleX: 0, originX: '0%' }}
         animate={{ scaleX: hovered ? 1 : 0 }}
         transition={{ duration: 0.22, ease }}
-        style={{ backgroundColor: `${iconColor}12` }}
+        style={{ backgroundColor: `${iconColor}08` }}
       />
 
+      {/* Icon with spring pop */}
       <motion.div
         animate={{
           scale: hovered ? 1.12 : 1,
@@ -177,11 +189,12 @@ function DropdownItem({
         <Icon className="w-5 h-5" style={{ color: iconColor }} />
       </motion.div>
 
+      {/* Text slides right on hover */}
       <div className="relative z-10">
         <motion.p
           animate={{ x: hovered ? 2 : 0 }}
           transition={{ duration: 0.2 }}
-          className="font-semibold text-white text-sm"
+          className="font-semibold text-gray-900 text-sm"
         >
           {title}
         </motion.p>
@@ -194,6 +207,7 @@ function DropdownItem({
         </motion.p>
       </div>
 
+      {/* Arrow appears on hover */}
       <motion.span
         className="ml-auto relative z-10"
         animate={{ x: hovered ? 0 : -6, opacity: hovered ? 1 : 0 }}
@@ -205,6 +219,9 @@ function DropdownItem({
   )
 }
 
+// ============================================
+// Navbar Component — Full Premium
+// ============================================
 export function Navbar() {
   const { branding } = useDashboardStore()
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false)
@@ -242,7 +259,7 @@ export function Navbar() {
     {
       href:      '/admin/login',
       icon:      LayoutDashboard,
-      iconBg:    `${branding.primaryColor}20`,
+      iconBg:    `${branding.primaryColor}18`,
       iconColor: branding.primaryColor,
       title:     'Admin / Owner',
       subtitle:  'Dashboard & Management',
@@ -250,7 +267,7 @@ export function Navbar() {
     {
       href:      '/booth/login',
       icon:      Camera,
-      iconBg:    `${branding.secondaryColor}20`,
+      iconBg:    `${branding.secondaryColor}18`,
       iconColor: branding.secondaryColor,
       title:     'Booth / Outlet',
       subtitle:  'Photo Session Interface',
@@ -261,15 +278,16 @@ export function Navbar() {
     <header
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
       style={{
-        background: scrolled ? 'rgba(10,10,26,0.82)' : 'rgba(10,10,26,0)',
-        backdropFilter: scrolled ? 'blur(20px) saturate(200%)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(200%)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(168,85,247,0.15)' : '1px solid transparent',
-        boxShadow: scrolled ? '0 4px 30px rgba(0,0,0,0.3)' : 'none',
+        background:          scrolled ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0)',
+        backdropFilter:      scrolled ? 'blur(18px) saturate(200%)' : 'none',
+        WebkitBackdropFilter:scrolled ? 'blur(18px) saturate(200%)' : 'none',
+        borderBottom:        scrolled ? `1px solid ${branding.primaryColor}18` : '1px solid transparent',
+        boxShadow:           scrolled ? '0 4px 30px rgba(0,0,0,0.07)' : 'none',
       }}
     >
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
 
+        {/* ── Logo ──────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -286,22 +304,28 @@ export function Navbar() {
               <motion.div
                 whileHover={{ scale: 1.1, rotate: 8 }}
                 transition={{ type: 'spring', stiffness: 280, damping: 16 }}
-                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`, boxShadow: `0 4px 20px ${branding.primaryColor}40` }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                style={{ background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` }}
               >
                 <Camera className="w-5 h-5 text-white" />
               </motion.div>
             )}
             <motion.span
-              className="text-xl font-bold text-gradient"
+              className="text-xl font-bold"
               whileHover={{ letterSpacing: '0.01em' }}
               transition={{ duration: 0.2 }}
+              style={{
+                background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
             >
               {branding.companyName}
             </motion.span>
           </a>
         </motion.div>
 
+        {/* ── Desktop Nav ────────────────────────────────────── */}
         <nav className="hidden md:flex items-center gap-0.5" style={{ perspective: '800px' }}>
           {navLinks.map((link, i) => (
             <MagneticNavLink
@@ -317,12 +341,14 @@ export function Navbar() {
           ))}
         </nav>
 
+        {/* ── Right side ─────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.15, ease }}
           className="flex items-center gap-3"
         >
+          {/* Login dropdown trigger */}
           <div className="relative" ref={dropdownRef}>
             <motion.button
               onClick={() => setLoginDropdownOpen(!loginDropdownOpen)}
@@ -331,15 +357,16 @@ export function Navbar() {
               className="relative flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white text-sm overflow-hidden shadow-lg"
               style={{
                 background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
-                boxShadow: `0 4px 20px ${branding.primaryColor}40`,
+                boxShadow: `0 4px 16px ${branding.primaryColor}40`,
               }}
             >
+              {/* Shimmer sweep */}
               <motion.span
                 className="absolute inset-0 pointer-events-none"
                 animate={{ x: loginDropdownOpen ? '200%' : '-100%' }}
                 transition={{ duration: 0.7, ease: 'linear', repeat: loginDropdownOpen ? 0 : Infinity, repeatDelay: 2 }}
                 style={{
-                  background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%)',
+                  background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.28) 50%, transparent 60%)',
                   width: '100%',
                 }}
               />
@@ -354,6 +381,7 @@ export function Navbar() {
               </motion.span>
             </motion.button>
 
+            {/* ── Dropdown panel ────────────────────────────── */}
             <AnimatePresence>
               {loginDropdownOpen && (
                 <motion.div
@@ -361,19 +389,20 @@ export function Navbar() {
                   animate={{ opacity: 1, y: 0,   scale: 1,    filter: 'blur(0px)' }}
                   exit={{   opacity: 0, y: -8,   scale: 0.93, filter: 'blur(4px)' }}
                   transition={{ duration: 0.22, ease }}
-                  className="absolute right-0 mt-2.5 w-64 rounded-2xl overflow-hidden"
+                  className="absolute right-0 mt-2.5 w-64 bg-white rounded-2xl overflow-hidden"
                   style={{
                     transformOrigin: 'top right',
-                    background: 'rgba(15, 10, 46, 0.95)',
-                    backdropFilter: 'blur(24px)',
-                    boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(168,85,247,0.15)',
+                    boxShadow: '0 24px 60px rgba(0,0,0,0.13), 0 4px 16px rgba(0,0,0,0.06)',
+                    border: '1px solid rgba(0,0,0,0.06)',
                   }}
                 >
+                  {/* Gradient top stripe */}
                   <div
                     className="h-1 w-full"
                     style={{ background: `linear-gradient(90deg, ${branding.primaryColor}, ${branding.secondaryColor})` }}
                   />
 
+                  {/* Role hint label */}
                   <motion.p
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -392,14 +421,14 @@ export function Navbar() {
                     />
                   ))}
 
+                  {/* Footer hint */}
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.22 }}
-                    className="px-4 py-2.5 border-t"
-                    style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+                    className="px-4 py-2.5 border-t border-gray-50 bg-gray-50/60"
                   >
-                    <p className="text-[11px] text-gray-500 text-center">
+                    <p className="text-[11px] text-gray-400 text-center">
                       Butuh bantuan?{' '}
                       <a href="/contact" className="font-semibold" style={{ color: branding.primaryColor }}>
                         Hubungi kami
@@ -411,11 +440,12 @@ export function Navbar() {
             </AnimatePresence>
           </div>
 
+          {/* Mobile menu toggle */}
           <motion.button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.93 }}
-            className="md:hidden p-2 rounded-xl hover:bg-white/10 transition-colors"
+            className="md:hidden p-2 rounded-xl hover:bg-gray-100 transition-colors"
           >
             <AnimatePresence mode="wait">
               {mobileMenuOpen ? (
@@ -426,7 +456,7 @@ export function Navbar() {
                   exit={{   rotate: 90,  opacity: 0, scale: 0.6 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <X className="w-6 h-6 text-white" />
+                  <X className="w-6 h-6 text-gray-700" />
                 </motion.span>
               ) : (
                 <motion.span
@@ -436,7 +466,7 @@ export function Navbar() {
                   exit={{   rotate: -90, opacity: 0, scale: 0.6 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Menu className="w-6 h-6 text-white" />
+                  <Menu className="w-6 h-6 text-gray-700" />
                 </motion.span>
               )}
             </AnimatePresence>
@@ -444,6 +474,7 @@ export function Navbar() {
         </motion.div>
       </div>
 
+      {/* ── Mobile Menu ──────────────────────────────────────── */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -451,12 +482,8 @@ export function Navbar() {
             animate={{ opacity: 1, height: 'auto', filter: 'blur(0px)' }}
             exit={{   opacity: 0, height: 0,      filter: 'blur(6px)' }}
             transition={{ duration: 0.32, ease }}
-            className="md:hidden overflow-hidden border-t"
-            style={{ 
-              background: 'rgba(10,10,26,0.95)',
-              backdropFilter: 'blur(20px)',
-              borderColor: 'rgba(168,85,247,0.1)'
-            }}
+            className="md:hidden overflow-hidden bg-white/96 backdrop-blur-2xl border-t"
+            style={{ borderColor: `${branding.primaryColor}14` }}
           >
             <nav className="flex flex-col p-3 gap-0.5">
               {navLinks.map((link, i) => (
@@ -469,16 +496,18 @@ export function Navbar() {
                   whileHover={{ x: 4 }}
                   className="relative flex items-center justify-between px-4 py-3 rounded-xl font-medium text-sm overflow-hidden group"
                   style={{
-                    color: activeLink === link.href ? '#fff' : 'rgba(255,255,255,0.65)',
-                    backgroundColor: activeLink === link.href ? 'rgba(168,85,247,0.15)' : undefined,
+                    color:           activeLink === link.href ? branding.primaryColor : '#374151',
+                    backgroundColor: activeLink === link.href ? `${branding.primaryColor}10` : undefined,
                   }}
                   onClick={() => { setActiveLink(link.href); setMobileMenuOpen(false) }}
                 >
+                  {/* Hover sweep */}
                   <motion.span
                     className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    style={{ backgroundColor: 'rgba(168,85,247,0.08)' }}
+                    style={{ backgroundColor: `${branding.primaryColor}08` }}
                   />
                   <span className="relative z-10">{link.label}</span>
+                  {/* Active dot slides between items */}
                   {activeLink === link.href && (
                     <motion.span
                       layoutId="mobile-active-dot"
@@ -489,18 +518,19 @@ export function Navbar() {
                 </motion.a>
               ))}
 
+              {/* Mobile login shortcuts */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1,  y: 0  }}
                 transition={{ delay: navLinks.length * 0.055 + 0.06, duration: 0.3, ease }}
                 className="mt-2 pt-2.5 border-t grid grid-cols-2 gap-2"
-                style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+                style={{ borderColor: `${branding.primaryColor}14` }}
               >
                 <a
                   href="/admin/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-colors"
-                  style={{ borderColor: `${branding.primaryColor}40`, color: branding.primaryColor }}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+                  style={{ borderColor: `${branding.primaryColor}30`, color: branding.primaryColor }}
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
                   Admin

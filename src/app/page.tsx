@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { 
   Camera, 
@@ -15,156 +15,15 @@ import {
   Image as ImageIcon,
   TrendingUp,
   Clock,
-  Navigation,
-  Star,
-  Shield,
-  Zap,
-  ChevronRight
+  Navigation
 } from 'lucide-react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { Navbar } from '@/components/landing/Navbar'
 import { Footer } from '@/components/landing/Footer'
 
-const ease = [0.22, 1, 0.36, 1] as const
-
-function FloatingOrb({ size, x, y, color, delay, duration }: {
-  size: number; x: number; y: number; color: string; delay: number; duration: number
-}) {
-  return (
-    <motion.div
-      className="absolute rounded-full blur-3xl pointer-events-none"
-      style={{
-        width: size, height: size,
-        left: `${x}%`, top: `${y}%`,
-        background: `radial-gradient(circle, ${color}, transparent 70%)`,
-      }}
-      animate={{
-        x: [0, 30, -20, 0],
-        y: [0, -30, 20, 0],
-        scale: [1, 1.15, 0.9, 1],
-        opacity: [0.15, 0.25, 0.15, 0.15],
-      }}
-      transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
-    />
-  )
-}
-
-function ParticleField({ count = 30 }: { count?: number }) {
-  const particles = Array.from({ length: count }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 3 + 1,
-    delay: Math.random() * 5,
-    duration: Math.random() * 4 + 3,
-  }))
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full"
-          style={{
-            left: `${p.x}%`, top: `${p.y}%`,
-            width: p.size, height: p.size,
-            backgroundColor: p.id % 3 === 0 ? '#a855f7' : p.id % 3 === 1 ? '#ec4899' : '#6366f1',
-          }}
-          animate={{
-            y: [0, -40, 0, 20, 0],
-            opacity: [0, 0.6, 0.2, 0.6, 0],
-            scale: [0, 1, 0.5, 1, 0],
-          }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function PolaroidStack() {
-  const photos = [
-    { rotate: -8, y: 0, src: 'https://picsum.photos/seed/p1/400/500', label: 'Event Photo', z: 10, x: -20 },
-    { rotate: 6, y: -15, src: 'https://picsum.photos/seed/p2/400/500', label: 'Party Time', z: 20, x: 25 },
-    { rotate: -3, y: 10, src: 'https://picsum.photos/seed/p3/400/500', label: 'Memories', z: 15, x: -5 },
-  ]
-
-  return (
-    <div className="relative w-full h-[500px] flex items-center justify-center">
-      <motion.div
-        className="absolute inset-0"
-        animate={{ scale: [1, 1.08, 1], opacity: [0.15, 0.25, 0.15] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          background: 'radial-gradient(circle at 50% 50%, #a855f7 0%, transparent 60%)',
-        }}
-      />
-      {photos.map((photo, i) => (
-        <motion.div
-          key={i}
-          className="absolute"
-          style={{ zIndex: photo.z }}
-          animate={{
-            y: [photo.y, photo.y - 12, photo.y],
-            rotate: [photo.rotate, photo.rotate + 2, photo.rotate - 1, photo.rotate],
-            x: [photo.x, photo.x + 5, photo.x - 3, photo.x],
-          }}
-          transition={{
-            duration: 5 + i,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: i * 0.8,
-          }}
-          whileHover={{ scale: 1.05, rotate: 0, zIndex: 50 }}
-        >
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 shadow-2xl border border-white/10">
-            <div className="w-52 h-64 rounded-xl overflow-hidden">
-              <img src={photo.src} alt={photo.label} className="w-full h-full object-cover" />
-            </div>
-            <div className="p-3">
-              <p className="text-white/80 text-xs font-medium tracking-wide">{photo.label}</p>
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const [displayed, setDisplayed] = useState(0)
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true })
-
-  useEffect(() => {
-    if (!isInView) return
-    let start = 0
-    const end = value
-    const duration = 2000
-    const step = Math.ceil(end / (duration / 16))
-    const timer = setInterval(() => {
-      start += step
-      if (start >= end) {
-        setDisplayed(end)
-        clearInterval(timer)
-      } else {
-        setDisplayed(start)
-      }
-    }, 16)
-    return () => clearInterval(timer)
-  }, [isInView, value])
-
-  return (
-    <motion.span
-      ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      className="tabular-nums"
-    >
-      {displayed.toLocaleString('id-ID')}{suffix}
-    </motion.span>
-  )
-}
+// ============================================
+// Home Page - Hero Section
+// ============================================
 
 export default function HomePage() {
   const { branding, outlets } = useDashboardStore()
@@ -175,6 +34,10 @@ export default function HomePage() {
     uptime: 99.9
   })
 
+  const formatNumber = (value: number) =>
+    value.toLocaleString('id-ID')
+
+  // Live stats counter animation
   useEffect(() => {
     const interval = setInterval(() => {
       setStats(prev => ({
@@ -193,365 +56,428 @@ export default function HomePage() {
     {
       icon: CreditCard,
       title: 'QRIS Payment',
-      description: 'Pembayaran instan dengan QRIS tanpa ribet',
-      gradient: 'from-purple-500 to-pink-500'
+      description: 'Pembayaran instan dengan QRIS'
     },
     {
       icon: Printer,
       title: 'Silent Print',
-      description: 'Teknologi thermal printing tanpa suara',
-      gradient: 'from-pink-500 to-rose-500'
+      description: 'Teknologi printing tanpa suara'
     },
     {
       icon: Film,
       title: 'GIF Engine',
-      description: 'Buat GIF animasi dari burst foto',
-      gradient: 'from-indigo-500 to-purple-500'
+      description: 'Buat GIF animasi dari burst foto'
     },
     {
       icon: Newspaper,
       title: 'Newspaper A4',
-      description: 'Template koran A4 yang unik & personal',
-      gradient: 'from-violet-500 to-indigo-500'
-    },
-    {
-      icon: Shield,
-      title: 'Cloud Backup',
-      description: 'Semua foto tersimpan aman di cloud',
-      gradient: 'from-blue-500 to-indigo-500'
-    },
-    {
-      icon: Zap,
-      title: 'Real-time Sync',
-      description: 'Sinkronasi multi-booth secara real-time',
-      gradient: 'from-amber-500 to-orange-500'
-    },
+      description: 'Template koran A4 yang unik'
+    }
   ]
 
   return (
-    <div className="min-h-screen relative">
-      <FloatingOrb size={600} x={-10} y={10} color="#a855f7" delay={0} duration={10} />
-      <FloatingOrb size={500} x={70} y={60} color="#ec4899" delay={2} duration={12} />
-      <FloatingOrb size={400} x={80} y={-5} color="#6366f1" delay={4} duration={8} />
-      <FloatingOrb size={300} x={20} y={70} color="#a855f7" delay={1} duration={9} />
-
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
+      
+      {/* Hero Section */}
+      <section className="pt-24 pb-20 px-4 relative overflow-hidden">
+        {/* Background Gradient */}
+        <div 
+          className="absolute inset-0 opacity-10"
+          style={{
+            background: `radial-gradient(circle at 30% 20%, ${branding.primaryColor}, transparent 50%), 
+                         radial-gradient(circle at 70% 80%, ${branding.secondaryColor}, transparent 50%)`
+          }}
+        />
 
-      {/* ============================== */}
-      {/* HERO SECTION                   */}
-      {/* ============================== */}
-      <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
-        <ParticleField count={40} />
-
-        <div className="max-w-7xl mx-auto px-4 w-full relative z-10">
+        <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Hero Content */}
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease }}
+              transition={{ duration: 0.6 }}
             >
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6 glass-strong"
+              <div 
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6"
+                style={{ 
+                  backgroundColor: `${branding.primaryColor}20`,
+                  color: branding.primaryColor
+                }}
               >
-                <Sparkles className="w-4 h-4 text-purple-400" />
-                <span className="text-white/80">Solusi SaaS Photo Box All-in-One</span>
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 leading-tight"
-              >
-                <span className="text-white">SnapNext:</span>
-                <br />
-                <span className="text-gradient">Photo Box</span>
-                <br />
-                <span className="text-white/90">All-in-One SaaS</span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-lg md:text-xl text-white/60 mb-8 leading-relaxed max-w-xl"
-              >
-                Platform photo booth profesional dengan pembayaran QRIS, printing instan,
-                pembuatan GIF, dan galeri digital. Sempurna untuk event, pesta, dan aktivasi marketing.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="flex flex-col sm:flex-row gap-4"
-              >
-                <a
-                  href="/booth"
-                  className="group relative px-8 py-4 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 overflow-hidden"
+                <Sparkles className="w-4 h-4" />
+                <span>Solusi SaaS Photo Box All-in-One</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                SnapNext: Solusi SaaS{' '}
+                <span 
                   style={{
                     background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
                   }}
                 >
-                  <motion.span
-                    className="absolute inset-0 pointer-events-none"
-                    animate={{ x: ['-100%', '200%'] }}
-                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2, ease: 'linear' }}
-                    style={{
-                      background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)',
-                      width: '60%',
-                    }}
-                  />
-                  <span className="relative z-10 text-white">Mulai Sesi Foto</span>
-                  <ArrowRight className="w-5 h-5 relative z-10 text-white group-hover:translate-x-1 transition-transform" />
+                  Photo Box All-in-One
+                </span>
+              </h1>
+              
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                Platform photo booth profesional dengan pembayaran QRIS, printing instan, 
+                pembuatan GIF, dan galeri digital. Sempurna untuk event, pesta, dan aktivasi marketing.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a 
+                  href="/booth"
+                  className="px-8 py-4 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 hover:opacity-90 shadow-lg"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`
+                  }}
+                >
+                  Mulai Sesi Foto
+                  <ArrowRight className="w-5 h-5" />
                 </a>
-                <a
+                <a 
                   href="/features"
-                  className="px-8 py-4 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 glass-strong hover:bg-white/10 text-white/80 hover:text-white"
+                  className="px-8 py-4 border-2 text-gray-700 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 hover:bg-gray-50"
+                  style={{ borderColor: `${branding.primaryColor}40` }}
                 >
                   Pelajari Fitur
-                  <ChevronRight className="w-5 h-5" />
                 </a>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
-                className="flex items-center gap-6 mt-10"
-              >
-                <div className="flex -space-x-2">
-                  {[1,2,3,4].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full border-2 border-gray-900 overflow-hidden">
-                      <img src={`https://i.pravatar.cc/32?u=${i}`} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-                <div className="text-sm">
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-white/50 mt-0.5">Dipercaya 500+ vendor</p>
-                </div>
-              </motion.div>
+              </div>
             </motion.div>
 
+            {/* Floating Photo Frames Animation */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="hidden lg:block"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative h-[500px] hidden lg:block"
             >
-              <PolaroidStack />
+              {/* Frame 1 */}
+              <motion.div
+                animate={{ 
+                  y: [0, -20, 0],
+                  rotate: [-5, -5, -5]
+                }}
+                transition={{ 
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute top-10 left-10 w-48 h-64 bg-white rounded-2xl shadow-2xl overflow-hidden"
+                style={{ transform: 'rotate(-5deg)' }}
+              >
+                <img 
+                  src="https://picsum.photos/seed/photo1/400/500" 
+                  alt="Photo 1"
+                  className="w-full h-full object-cover"
+                />
+                <div 
+                  className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent"
+                >
+                  <p className="text-white text-sm font-medium">Event Photo</p>
+                </div>
+              </motion.div>
+
+              {/* Frame 2 */}
+              <motion.div
+                animate={{ 
+                  y: [0, 20, 0],
+                  rotate: [5, 5, 5]
+                }}
+                transition={{ 
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+                className="absolute top-20 right-10 w-56 h-72 bg-white rounded-2xl shadow-2xl overflow-hidden"
+                style={{ transform: 'rotate(5deg)' }}
+              >
+                <img 
+                  src="https://picsum.photos/seed/photo2/400/500" 
+                  alt="Photo 2"
+                  className="w-full h-full object-cover"
+                />
+                <div 
+                  className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent"
+                >
+                  <p className="text-white text-sm font-medium">Party Time</p>
+                </div>
+              </motion.div>
+
+              {/* Frame 3 */}
+              <motion.div
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, 0, 0]
+                }}
+                transition={{ 
+                  duration: 4.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+                className="absolute bottom-20 left-1/4 w-52 h-68 bg-white rounded-2xl shadow-2xl overflow-hidden"
+              >
+                <img 
+                  src="https://picsum.photos/seed/photo3/400/500" 
+                  alt="Photo 3"
+                  className="w-full h-full object-cover"
+                />
+                <div 
+                  className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent"
+                >
+                  <p className="text-white text-sm font-medium">Memories</p>
+                </div>
+              </motion.div>
+
+              {/* Decorative Elements */}
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.6, 0.3]
+                }}
+                transition={{ 
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute top-1/2 left-1/2 w-32 h-32 rounded-full"
+                style={{ 
+                  background: `radial-gradient(circle, ${branding.primaryColor}40, transparent)`,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              />
             </motion.div>
           </div>
         </div>
-
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-1.5">
-            <motion.div
-              className="w-1.5 h-3 rounded-full bg-purple-400"
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          </div>
-        </motion.div>
       </section>
 
-      {/* ============================== */}
-      {/* STATS SECTION                  */}
-      {/* ============================== */}
-      <section className="py-20 px-4 relative">
+      {/* Live Stats Section */}
+      <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8"
-          >
-            <StatCard icon={ImageIcon} value={stats.photos} label="Photos Captured" color={branding.primaryColor} />
-            <StatCard icon={MapPin} value={stats.outlets} label="Active Outlets" color={branding.secondaryColor} />
-            <StatCard icon={Users} value={stats.users} label="Happy Users" color="#6366f1" />
-            <StatCard icon={TrendingUp} value={stats.uptime} label="Uptime %" color="#22c55e" suffix="%" />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ============================== */}
-      {/* FEATURES SECTION               */}
-      {/* ============================== */}
-      <section className="py-24 px-4 relative">
-        <ParticleField count={20} />
-        <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="grid grid-cols-2 md:grid-cols-4 gap-8"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-4 glass-strong"
-            >
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <span className="text-white/80">Powerful Features</span>
-            </motion.div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              <span className="text-white">Fitur </span>
-              <span className="text-gradient">Unggulan</span>
+            <StatCard 
+              icon={ImageIcon}
+              value={formatNumber(stats.photos)}
+              label="Photos Captured"
+              color={branding.primaryColor}
+            />
+            <StatCard 
+              icon={MapPin}
+              value={stats.outlets.toString()}
+              label="Active Outlets"
+              color={branding.secondaryColor}
+            />
+            <StatCard 
+              icon={Users}
+              value={formatNumber(stats.users)}
+              label="Happy Users"
+              color={branding.primaryColor}
+            />
+            <StatCard 
+              icon={TrendingUp}
+              value={`${stats.uptime}%`}
+              label="Uptime"
+              color={branding.secondaryColor}
+            />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Preview */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Fitur Unggulan
             </h2>
-            <p className="text-lg text-white/50 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Teknologi terdepan untuk pengalaman photo booth yang tak terlupakan
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <FeatureCard
+              <FeatureCard 
                 key={feature.title}
                 icon={feature.icon}
                 title={feature.title}
                 description={feature.description}
-                gradient={feature.gradient}
                 index={index}
+                primaryColor={branding.primaryColor}
+                secondaryColor={branding.secondaryColor}
               />
             ))}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mt-12"
-          >
-            <a
+          <div className="text-center mt-12">
+            <a 
               href="/features"
-              className="inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-xl glass-strong hover:bg-white/10 text-white/80 hover:text-white transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-xl transition-all hover:opacity-90"
+              style={{ 
+                background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
+                color: 'white'
+              }}
             >
               Lihat Semua Fitur
               <ArrowRight className="w-5 h-5" />
             </a>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ============================== */}
-      {/* LOCATIONS SECTION              */}
-      {/* ============================== */}
-      <section className="py-24 px-4 relative">
-        <FloatingOrb size={400} x={60} y={30} color="#a855f7" delay={1} duration={11} />
-        <div className="max-w-7xl mx-auto relative z-10">
+      {/* Map Preview */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-4 glass-strong"
+            <div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6"
+              style={{ 
+                backgroundColor: `${branding.primaryColor}20`,
+                color: branding.primaryColor
+              }}
             >
-              <MapPin className="w-4 h-4 text-purple-400" />
-              <span className="text-white/80">Lokasi Kami</span>
-            </motion.div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              <MapPin className="w-4 h-4" />
+              <span>Lokasi Kami</span>
+            </div>
+            
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Temukan Booth{' '}
-              <span className="text-gradient">Terdekat</span>
+              <span 
+                style={{
+                  background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+              >
+                Terdekat
+              </span>
             </h2>
-            <p className="text-lg text-white/50 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               {onlineOutlets.length}+ outlet aktif di seluruh Indonesia. Temukan lokasi SnapNext terdekat dari Anda.
             </p>
           </motion.div>
 
+          {/* Google Maps Embed */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="rounded-2xl overflow-hidden relative h-[400px] mb-8 glass-strong"
+            className="bg-white rounded-2xl overflow-hidden shadow-lg relative h-[500px] mb-8"
           >
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.521260322283!2d106.84559901476918!3d-6.208763495493379!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f5390917b759%3A0x6b45e67356225804!2sJakarta!5e0!3m2!1sen!2sid!4v1234567890"
               width="100%"
               height="100%"
-              style={{ border: 0, filter: 'invert(0.9) hue-rotate(180deg)' }}
+              style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               title="Lokasi SnapNext"
             />
-            <div className="absolute top-4 left-4 glass-strong rounded-xl p-4 max-w-xs">
-              <h3 className="font-semibold text-white mb-2 text-sm">Cara Menggunakan</h3>
-              <ul className="text-xs text-white/60 space-y-1">
-                <li>Klik marker untuk melihat detail lokasi</li>
-                <li>Gunakan tombol navigasi untuk arah</li>
-                <li>Zoom in/out untuk melihat area lebih detail</li>
+            
+            {/* Map Overlay Info */}
+            <div className="absolute top-4 left-4 bg-white rounded-xl shadow-lg p-4 max-w-xs">
+              <h3 className="font-semibold text-gray-900 mb-2">Cara Menggunakan</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Klik marker untuk melihat detail lokasi</li>
+                <li>• Gunakan tombol navigasi untuk arah</li>
+                <li>• Zoom in/out untuk melihat area lebih detail</li>
+                <li>• Drag untuk menjelajahi peta</li>
               </ul>
+            </div>
+
+            {/* Legend */}
+            <div className="absolute bottom-4 left-4 bg-white rounded-xl shadow-lg p-4">
+              <h4 className="font-semibold text-gray-900 mb-2 text-sm">Legend</h4>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: branding.primaryColor }}
+                />
+                <span className="text-sm text-gray-600">Lokasi Aktif</span>
+              </div>
             </div>
           </motion.div>
 
+          {/* Location List */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-xl font-semibold text-white mb-4">Outlet Aktif</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Outlet Aktif</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {outlets.slice(0, 4).map((outlet) => (
                 <motion.div
                   key={outlet.id}
-                  whileHover={{ y: -5, scale: 1.02 }}
-                  className="glass-strong rounded-xl p-4 transition-all cursor-pointer group"
+                  whileHover={{ y: -5 }}
+                  className="bg-white rounded-xl p-4 shadow-sm hover:shadow-lg transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="text-base font-semibold text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 group-hover:bg-clip-text transition-all">{outlet.name}</h3>
-                      <p className="text-white/50 text-xs mt-1">{outlet.location}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">{outlet.name}</h3>
+                      <p className="text-gray-500 text-sm mt-1">{outlet.location}</p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-semibold ${
-                      outlet.status === 'online'
-                        ? 'bg-green-500/20 text-green-400'
-                        : outlet.status === 'offline'
-                        ? 'bg-gray-500/20 text-gray-400'
-                        : 'bg-red-500/20 text-red-400'
-                    }`}>
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        outlet.status === 'online'
+                          ? 'bg-green-100 text-green-600'
+                          : outlet.status === 'offline'
+                          ? 'bg-gray-100 text-gray-600'
+                          : 'bg-red-100 text-red-600'
+                      }`}
+                    >
                       {outlet.status}
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 mb-3">
-                    <div className="flex items-center gap-2 text-white/50">
-                      <MapPin className="w-3.5 h-3.5 text-purple-400" />
-                      <span className="text-xs">{outlet.location}</span>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4" style={{ color: branding.primaryColor }} />
+                      <span className="text-sm">{outlet.location}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-white/50">
-                      <Clock className="w-3.5 h-3.5 text-purple-400" />
-                      <span className="text-xs">10:00 - 22:00</span>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Clock className="w-4 h-4" style={{ color: branding.primaryColor }} />
+                      <span className="text-sm">10:00 - 22:00</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1 mb-3">
+                  {/* Features */}
+                  <div className="flex flex-wrap gap-1 mb-4">
                     {outlet.features.qris && (
-                      <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] rounded-full">QRIS</span>
+                      <span className="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">
+                        QRIS
+                      </span>
                     )}
                     {outlet.features.voucher && (
-                      <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded-full">Voucher</span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full">
+                        Voucher
+                      </span>
                     )}
                     {outlet.features.cashless && (
-                      <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">Cashless</span>
+                      <span className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">
+                        Cashless
+                      </span>
                     )}
                   </div>
 
@@ -559,18 +485,21 @@ export default function HomePage() {
                     href={`https://www.google.com/maps/dir/?api=1&destination=${outlet.location}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 text-white/80 hover:text-white text-xs glass hover:bg-white/10"
+                    className="w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 text-white hover:opacity-90 text-sm"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`
+                    }}
                   >
-                    <Navigation className="w-3.5 h-3.5" />
+                    <Navigation className="w-4 h-4" />
                     Buka di Maps
                   </a>
                 </motion.div>
               ))}
             </div>
             <div className="mt-6 text-center">
-              <a
+              <a 
                 href="/locations"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all text-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-dashed text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"
               >
                 <span>Lihat Semua Lokasi</span>
                 <ArrowRight className="w-4 h-4" />
@@ -580,24 +509,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============================== */}
-      {/* CTA SECTION                    */}
-      {/* ============================== */}
-      <section className="py-24 px-4 relative">
-        <ParticleField count={25} />
-        <div className="max-w-4xl mx-auto relative z-10">
+      {/* CTA Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-4xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="rounded-3xl p-8 md:p-14 text-center text-white relative overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`,
+            className="rounded-3xl p-8 md:p-12 text-center text-white relative overflow-hidden"
+            style={{ 
+              background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`
             }}
           >
-            <FloatingOrb size={300} x={80} y={-10} color="white" delay={0} duration={6} />
-            <FloatingOrb size={200} x={-10} y={80} color="white" delay={2} duration={8} />
-
+            {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10">
               <svg className="w-full h-full">
                 <defs>
@@ -610,44 +534,26 @@ export default function HomePage() {
             </div>
 
             <div className="relative z-10">
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-3xl md:text-5xl font-bold mb-4"
-              >
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Siap Memulai?
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto"
-              >
+              </h2>
+              <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
                 Bergabunglah dengan ratusan vendor yang telah mempercayakan bisnis photo booth mereka dengan SnapNext
-              </motion.p>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
-              >
-                <a
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a 
                   href="/admin/login"
-                  className="group px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
+                  className="px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
                 >
                   Mulai Gratis
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </a>
-                <a
+                <a 
                   href="/pricing"
-                  className="px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-all"
+                  className="px-8 py-4 border-2 border-white text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
                 >
                   Lihat Harga
                 </a>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -658,49 +564,61 @@ export default function HomePage() {
   )
 }
 
+// ============================================
+// Stat Card Component
+// ============================================
+
 interface StatCardProps {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
-  value: number
+  value: string
   label: string
   color: string
-  suffix?: string
 }
 
-function StatCard({ icon: Icon, value, label, color, suffix = '' }: StatCardProps) {
+function StatCard({ icon: Icon, value, label, color }: StatCardProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5 }}
-      className="glass-strong rounded-2xl p-6 text-center group hover:border-purple-500/30 transition-all duration-300"
+      className="text-center"
     >
-      <div
-        className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+      <div 
+        className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
         style={{ backgroundColor: `${color}20` }}
       >
-        <Icon className="w-7 h-7" style={{ color }} />
+        <Icon className="w-8 h-8" style={{ color }} />
       </div>
-      <p className="text-3xl md:text-4xl font-bold text-white mb-1">
-        <AnimatedCounter value={value} suffix={suffix} />
-      </p>
-      <p className="text-white/50 text-sm">{label}</p>
+      <motion.p
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+        transition={{ delay: 0.2 }}
+        className="text-3xl md:text-4xl font-bold text-gray-900 mb-2"
+      >
+        {value}
+      </motion.p>
+      <p className="text-gray-500">{label}</p>
     </motion.div>
   )
 }
+
+// ============================================
+// Feature Card Component
+// ============================================
 
 interface FeatureCardProps {
   icon: React.ComponentType<{ className?: string }>
   title: string
   description: string
-  gradient: string
   index: number
+  primaryColor: string
+  secondaryColor: string
 }
 
-function FeatureCard({ icon: Icon, title, description, gradient, index }: FeatureCardProps) {
+function FeatureCard({ icon: Icon, title, description, index, primaryColor, secondaryColor }: FeatureCardProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
 
@@ -709,24 +627,20 @@ function FeatureCard({ icon: Icon, title, description, gradient, index }: Featur
       ref={ref}
       initial={{ opacity: 0, y: 30 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.08, duration: 0.5 }}
+      transition={{ delay: index * 0.1 }}
       whileHover={{ y: -8, scale: 1.02 }}
-      className="glass-strong rounded-2xl p-6 transition-all duration-300 group relative overflow-hidden"
+      className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all"
     >
-      <motion.div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: `linear-gradient(135deg, rgba(168,85,247,0.05), rgba(236,72,153,0.05))`,
+      <div 
+        className="w-14 h-14 rounded-xl flex items-center justify-center mb-4"
+        style={{ 
+          background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`
         }}
-      />
-
-      <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br ${gradient} shadow-lg`}>
+      >
         <Icon className="w-7 h-7 text-white" />
       </div>
-      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 group-hover:bg-clip-text transition-all">
-        {title}
-      </h3>
-      <p className="text-white/50 text-sm leading-relaxed">{description}</p>
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600">{description}</p>
     </motion.div>
   )
 }
