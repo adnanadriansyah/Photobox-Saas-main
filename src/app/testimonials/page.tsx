@@ -72,7 +72,7 @@ export default function TestimonialsPage() {
               </span>
             </h1>
             
-            <p className="text-xl text-white/60 leading-relaxed">
+            <p className="text-xl text-white/80 leading-relaxed">
               Dengarkan pengalaman nyata dari pelanggan yang telah menggunakan SnapNext 
               untuk berbagai event dan aktivasi.
             </p>
@@ -197,7 +197,7 @@ export default function TestimonialsPage() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl font-bold text-white mb-4">Semua Testimoni</h2>
-            <p className="text-xl text-white/60">Lebih banyak cerita dari pelanggan kami</p>
+            <p className="text-xl text-white/80">Lebih banyak cerita dari pelanggan kami</p>
           </motion.div>
 
           {approvedTestimonials.length > 0 ? (
@@ -227,7 +227,7 @@ export default function TestimonialsPage() {
                   </div>
 
                   {/* Quote */}
-                  <p className="text-white/70 mb-4 line-clamp-4">
+                   <p className="text-white/80 mb-4 line-clamp-4">
                     "{testimonial.comment}"
                   </p>
 
@@ -278,7 +278,7 @@ export default function TestimonialsPage() {
               >
                 4.8
               </div>
-              <p className="text-white/60">Rating Rata-rata</p>
+              <p className="text-white/80">Rating Rata-rata</p>
             </div>
             <div className="text-center">
               <div 
@@ -287,7 +287,7 @@ export default function TestimonialsPage() {
               >
                 150+
               </div>
-              <p className="text-white/60">Testimoni</p>
+              <p className="text-white/80">Testimoni</p>
             </div>
             <div className="text-center">
               <div 
@@ -296,7 +296,7 @@ export default function TestimonialsPage() {
               >
                 98%
               </div>
-              <p className="text-white/60">Kepuasan</p>
+              <p className="text-white/80">Kepuasan</p>
             </div>
             <div className="text-center">
               <div 
@@ -305,7 +305,7 @@ export default function TestimonialsPage() {
               >
                 50+
               </div>
-              <p className="text-white/60">Event Sukses</p>
+              <p className="text-white/80">Event Sukses</p>
             </div>
           </motion.div>
         </div>

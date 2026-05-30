@@ -27,51 +27,68 @@ import { Footer } from '@/components/landing/Footer'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-function PolaroidStack() {
+function PhotoGallery() {
   const photos = [
-    { rotate: -8, y: 0, src: 'https://picsum.photos/seed/p1/400/500', label: 'Event Photo', z: 10, x: -20 },
-    { rotate: 6, y: -15, src: 'https://picsum.photos/seed/p2/400/500', label: 'Party Time', z: 20, x: 25 },
-    { rotate: -3, y: 10, src: 'https://picsum.photos/seed/p3/400/500', label: 'Memories', z: 15, x: -5 },
+    { src: 'https://picsum.photos/seed/p1/400/500', label: 'Event Photo' },
+    { src: 'https://picsum.photos/seed/p2/400/500', label: 'Party Time' },
+    { src: 'https://picsum.photos/seed/p3/400/500', label: 'Memories' },
   ]
 
   return (
-    <div className="relative w-full h-[500px] flex items-center justify-center">
+    <div className="relative w-full">
       <motion.div
-        className="absolute inset-0"
-        animate={{ scale: [1, 1.08, 1], opacity: [0.12, 0.2, 0.12] }}
+        className="absolute -inset-4"
+        animate={{ scale: [1, 1.05, 1], opacity: [0.08, 0.15, 0.08] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
         style={{
           background: 'radial-gradient(circle at 50% 50%, #a855f7 0%, transparent 60%)',
         }}
       />
-      {photos.map((photo, i) => (
+      <div className="grid grid-cols-2 gap-4 relative z-10">
         <motion.div
-          key={i}
-          className="absolute"
-          style={{ zIndex: photo.z }}
-          animate={{
-            y: [photo.y, photo.y - 12, photo.y],
-            rotate: [photo.rotate, photo.rotate + 2, photo.rotate - 1, photo.rotate],
-            x: [photo.x, photo.x + 5, photo.x - 3, photo.x],
-          }}
-          transition={{
-            duration: 5 + i,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: i * 0.8,
-          }}
-          whileHover={{ scale: 1.05, rotate: 0, zIndex: 50 }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="col-span-2"
         >
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 shadow-2xl border border-white/10">
-            <div className="w-52 h-64 rounded-xl overflow-hidden">
-              <img src={photo.src} alt={photo.label} className="w-full h-full object-cover" />
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 shadow-2xl border border-white/10 hover:scale-[1.02] transition-transform duration-300">
+            <div className="w-full h-72 rounded-xl overflow-hidden">
+              <img src={photos[0].src} alt={photos[0].label} className="w-full h-full object-cover" />
             </div>
             <div className="p-3">
-              <p className="text-white/80 text-xs font-medium tracking-wide">{photo.label}</p>
+              <p className="text-white/80 text-xs font-medium tracking-wide">{photos[0].label}</p>
             </div>
           </div>
         </motion.div>
-      ))}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 shadow-2xl border border-white/10 hover:scale-[1.02] transition-transform duration-300">
+            <div className="w-full h-48 rounded-xl overflow-hidden">
+              <img src={photos[1].src} alt={photos[1].label} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-3">
+              <p className="text-white/80 text-xs font-medium tracking-wide">{photos[1].label}</p>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 shadow-2xl border border-white/10 hover:scale-[1.02] transition-transform duration-300">
+            <div className="w-full h-48 rounded-xl overflow-hidden">
+              <img src={photos[2].src} alt={photos[2].label} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-3">
+              <p className="text-white/80 text-xs font-medium tracking-wide">{photos[2].label}</p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   )
 }
@@ -213,7 +230,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-lg md:text-xl text-white/60 mb-8 leading-relaxed max-w-xl"
+                className="text-lg md:text-xl text-white/80 mb-8 leading-relaxed max-w-xl"
               >
                 Platform photo booth profesional dengan pembayaran QRIS, printing instan,
                 pembuatan GIF, dan galeri digital. Sempurna untuk event, pesta, dan aktivasi marketing.
@@ -272,7 +289,7 @@ export default function HomePage() {
                       <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                     ))}
                   </div>
-                  <p className="text-white/50 mt-0.5">Dipercaya 500+ vendor</p>
+                  <p className="text-white/70 mt-0.5">Dipercaya 500+ vendor</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -283,7 +300,7 @@ export default function HomePage() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="hidden lg:block"
             >
-              <PolaroidStack />
+              <PhotoGallery />
             </motion.div>
           </div>
         </div>
@@ -349,7 +366,7 @@ export default function HomePage() {
               <span className="text-white">Fitur </span>
               <span className="text-gradient">Unggulan</span>
             </h2>
-            <p className="text-lg text-white/50 max-w-2xl mx-auto">
+            <p className="text-lg text-white/70 max-w-2xl mx-auto">
               Teknologi terdepan untuk pengalaman photo booth yang tak terlupakan
             </p>
           </motion.div>
@@ -409,7 +426,7 @@ export default function HomePage() {
               Temukan Booth{' '}
               <span className="text-gradient">Terdekat</span>
             </h2>
-            <p className="text-lg text-white/50 max-w-2xl mx-auto">
+               <p className="text-lg text-white/70 max-w-2xl mx-auto">
               {onlineOutlets.length}+ outlet aktif di seluruh Indonesia. Temukan lokasi SnapNext terdekat dari Anda.
             </p>
           </motion.div>
@@ -432,7 +449,7 @@ export default function HomePage() {
             />
             <div className="absolute top-4 left-4 glass-strong rounded-xl p-4 max-w-xs">
               <h3 className="font-semibold text-white mb-2 text-sm">Cara Menggunakan</h3>
-              <ul className="text-xs text-white/60 space-y-1">
+               <ul className="text-xs text-white/80 space-y-1">
                 <li>Klik marker untuk melihat detail lokasi</li>
                 <li>Gunakan tombol navigasi untuk arah</li>
                 <li>Zoom in/out untuk melihat area lebih detail</li>
@@ -456,7 +473,7 @@ export default function HomePage() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="text-base font-semibold text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 group-hover:bg-clip-text transition-all">{outlet.name}</h3>
-                      <p className="text-white/50 text-xs mt-1">{outlet.location}</p>
+                      <p className="text-white/70 text-xs mt-1">{outlet.location}</p>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-[10px] font-semibold ${
                       outlet.status === 'online'
@@ -470,11 +487,11 @@ export default function HomePage() {
                   </div>
 
                   <div className="space-y-1.5 mb-3">
-                    <div className="flex items-center gap-2 text-white/50">
+                    <div className="flex items-center gap-2 text-white/70">
                       <MapPin className="w-3.5 h-3.5 text-purple-400" />
                       <span className="text-xs">{outlet.location}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-white/50">
+                    <div className="flex items-center gap-2 text-white/70">
                       <Clock className="w-3.5 h-3.5 text-purple-400" />
                       <span className="text-xs">10:00 - 22:00</span>
                     </div>
@@ -496,7 +513,7 @@ export default function HomePage() {
                     href={`https://www.google.com/maps/dir/?api=1&destination=${outlet.location}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 text-white/80 hover:text-white text-xs glass hover:bg-white/10"
+                    className="w-full py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 text-white hover:text-white text-xs glass hover:bg-white/10"
                   >
                     <Navigation className="w-3.5 h-3.5" />
                     Buka di Maps
@@ -507,7 +524,7 @@ export default function HomePage() {
             <div className="mt-6 text-center">
               <a
                 href="/locations"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all text-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20 transition-all text-sm"
               >
                 <span>Lihat Semua Lokasi</span>
                 <ArrowRight className="w-4 h-4" />
@@ -620,7 +637,7 @@ function StatCard({ icon: Icon, value, label, color, suffix = '' }: StatCardProp
       <p className="text-3xl md:text-4xl font-bold text-white mb-1">
         <AnimatedCounter value={value} suffix={suffix} />
       </p>
-      <p className="text-white/50 text-sm">{label}</p>
+      <p className="text-white/70 text-sm">{label}</p>
     </motion.div>
   )
 }
@@ -659,7 +676,7 @@ function FeatureCard({ icon: Icon, title, description, gradient, index }: Featur
       <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 group-hover:bg-clip-text transition-all">
         {title}
       </h3>
-      <p className="text-white/50 text-sm leading-relaxed">{description}</p>
+      <p className="text-white/70 text-sm leading-relaxed">{description}</p>
     </motion.div>
   )
 }
