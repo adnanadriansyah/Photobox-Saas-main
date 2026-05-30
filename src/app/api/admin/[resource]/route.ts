@@ -33,6 +33,9 @@ const allowedFilters = [
   'transactionRef',
 ]
 
+// Resources yang butuh tenantId otomatis
+const tenantResources = ['users', 'outlets', 'frameTemplates', 'vouchers', 'testimonials', 'brandAssets']
+
 function getModel(resource: string) {
   return resourceMap[resource]
 }
@@ -56,17 +59,41 @@ function buildWhere(searchParams: URLSearchParams) {
   return where
 }
 
+// Auto-inject tenantId kalau resource butuh tenant
+async function injectTenantId(payload: any): Promise<any> {
+  if (!payload.tenantId) {
+    const tenant = await prisma.tenant.findFirst({ where: { isActive: true } })
+    if (tenant) payload.tenantId = tenant.id
+  }
+  return payload
+}
+
 async function normalizePayload(resource: string, payload: any) {
+  // Hash password untuk users
   if (resource === 'users') {
     if (payload.password) {
       payload.passwordHash = await bcrypt.hash(payload.password, 10)
       delete payload.password
     }
     delete payload.passwordConfirm
+
+    // Auto-inject tenantId
+    await injectTenantId(payload)
+
+    // Kalau outletId kosong, hapus dari payload
+    if (payload.outletId === '' || payload.outletId === null) {
+      delete payload.outletId
+    }
   }
 
+  // Auto-inject tenantId untuk resource lain yang butuh
+  if (tenantResources.includes(resource) && resource !== 'users') {
+    await injectTenantId(payload)
+  }
+
+  // Fix photos field untuk sessionPhotos
   if (resource === 'sessionPhotos' && payload.photos && !Array.isArray(payload.photos)) {
-  payload.photos = typeof payload.photos === 'string' ? JSON.parse(payload.photos) : payload.photos
+    payload.photos = typeof payload.photos === 'string' ? JSON.parse(payload.photos) : payload.photos
   }
 
   return payload
@@ -129,7 +156,25 @@ export async function PUT(request: NextRequest, { params }: { params: { resource
 
     const body = await request.json()
     const prismaClient = (prisma as any)[modelName] as any
-    const payload = await normalizePayload(params.resource, body)
+
+    // Untuk PUT, tidak perlu inject tenantId lagi
+    let payload = body
+    if (params.resource === 'users') {
+      if (payload.password) {
+        payload.passwordHash = await bcrypt.hash(payload.password, 10)
+        delete payload.password
+      }
+      delete payload.passwordConfirm
+      delete payload.tenantId // Jangan update tenantId
+
+      if (payload.outletId === '' || payload.outletId === null) {
+        payload.outletId = null
+      }
+    }
+
+    if (params.resource === 'sessionPhotos' && payload.photos && !Array.isArray(payload.photos)) {
+      payload.photos = typeof payload.photos === 'string' ? JSON.parse(payload.photos) : payload.photos
+    }
 
     const record = await prismaClient.update({ where: { id }, data: payload })
     return NextResponse.json({ success: true, data: record })
