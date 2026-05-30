@@ -107,14 +107,13 @@ export default function AdminPage() {
     ? 'rgba(255,255,255,0.5)'
     : 'rgba(0,0,0,0.08)'
 
-  // ✅ FIX: Dihapus "as const" agar array bersifat mutable,
-  //         sesuai tipe yang diharapkan Framer Motion.
   const blobOpacityDark  = [0.08, 0.13, 0.08]
   const blobOpacityLight = [0.05, 0.09, 0.05]
 
   return (
+    // ✅ FIX: Hapus overflow-hidden dari root supaya modal fixed bisa tampil penuh
     <div
-      className="flex h-screen overflow-hidden relative transition-colors duration-500"
+      className="flex h-screen relative transition-colors duration-500"
       style={{ background: bgGradient }}
     >
       {/* ── Animated background blobs ─────────────────────────── */}
@@ -157,7 +156,8 @@ export default function AdminPage() {
       {/* ── Main Content ──────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         <Header />
-        <main className="flex-1 overflow-auto p-6">
+        {/* ✅ FIX: overflow-y-auto supaya konten bisa scroll tapi modal tidak terpotong */}
+        <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
