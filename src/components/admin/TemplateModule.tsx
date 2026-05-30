@@ -1,43 +1,68 @@
 'use client'
 
-import { useState } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import { useState, useEffect } from 'react'
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   Image as ImageIcon,
   X,
   Check,
-  Upload
+  Loader2
 } from 'lucide-react'
-import { useDashboardStore, Template } from '@/lib/stores/dashboard-store'
+import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ============================================
-// Template Form Component
-// ============================================
+interface TemplateData {
+  id: string
+  name: string
+  type: string
+  imageUrl: string
+  thumbnailUrl: string | null
+  width: number | null
+  height: number | null
+  price: number
+  isActive: boolean
+  createdAt: string
+}
 
 interface TemplateFormProps {
-  template?: Template | null
+  template?: TemplateData | null
   onClose: () => void
-  onSubmit: (data: Omit<Template, 'id' | 'createdAt'>) => void
+  onSubmit: (data: any) => void
 }
 
 function TemplateForm({ template, onClose, onSubmit }: TemplateFormProps) {
   const [formData, setFormData] = useState({
     name: template?.name || '',
-    category: template?.category || '4R' as const,
+    type: template?.type || 'FOUR_R',
     imageUrl: template?.imageUrl || '',
-    price: template?.price || 0,
+    price: template?.price ?? 0,
     isActive: template?.isActive ?? true
   })
+
+  useEffect(() => {
+    setFormData({
+      name: template?.name || '',
+      type: template?.type || 'FOUR_R',
+      imageUrl: template?.imageUrl || '',
+      price: template?.price ?? 0,
+      isActive: template?.isActive ?? true
+    })
+  }, [template])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
     onClose()
+  }
+
+  const typeLabels: Record<string, string> = {
+    FOUR_R: '4R',
+    A4_NEWSPAPER: 'A4 Newspaper',
+    CUSTOM: 'Custom'
   }
 
   return (
@@ -77,38 +102,35 @@ function TemplateForm({ template, onClose, onSubmit }: TemplateFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Category</label>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Type</label>
             <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value as '4R' | 'A4 Newspaper' | 'GIF' })}
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <option value="4R">4R</option>
-              <option value="A4 Newspaper">A4 Newspaper</option>
-              <option value="GIF">GIF</option>
+              <option value="FOUR_R">4R</option>
+              <option value="A4_NEWSPAPER">A4 Newspaper</option>
+              <option value="CUSTOM">Custom</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Image</label>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Image URL</label>
             <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  const reader = new FileReader()
-                  reader.onloadend = () => {
-                    setFormData({ ...formData, imageUrl: reader.result as string })
-                  }
-                  reader.readAsDataURL(file)
-                }
-              }}
+              type="url"
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
             />
             {formData.imageUrl && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Image selected</p>
+              <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                <img
+                  src={formData.imageUrl}
+                  alt="Preview"
+                  className="w-full h-full object-contain"
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                />
+              </div>
             )}
           </div>
 
@@ -157,48 +179,95 @@ function TemplateForm({ template, onClose, onSubmit }: TemplateFormProps) {
   )
 }
 
-// ============================================
-// Template Module Component
-// ============================================
-
 export function TemplateModule() {
-  const { templates, addTemplate, updateTemplate, deleteTemplate, searchQuery } = useDashboardStore()
+  const { searchQuery } = useDashboardStore()
+  const [templates, setTemplates] = useState<TemplateData[]>([])
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
+  const [editingTemplate, setEditingTemplate] = useState<TemplateData | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
-  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [filterType, setFilterType] = useState<string>('all')
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch('/api/admin/frameTemplates')
+      const data = await res.json()
+      if (data.success) setTemplates(data.data)
+      else toast.error('Failed to load templates')
+    } catch {
+      toast.error('Failed to load templates')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchTemplates() }, [])
+
+  const handleCreate = async (formData: any) => {
+    const res = await fetch('/api/admin/frameTemplates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Template created successfully!')
+      fetchTemplates()
+    } else {
+      toast.error(data.error || 'Failed to create template')
+    }
+  }
+
+  const handleUpdate = async (formData: any) => {
+    if (!editingTemplate) return
+    const res = await fetch(`/api/admin/frameTemplates?id=${editingTemplate.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Template updated successfully!')
+      fetchTemplates()
+    } else {
+      toast.error(data.error || 'Failed to update template')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    const res = await fetch(`/api/admin/frameTemplates?id=${id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Template deleted successfully!')
+      setDeleteConfirm(null)
+      fetchTemplates()
+    } else {
+      toast.error(data.error || 'Failed to delete template')
+    }
+  }
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = filterCategory === 'all' || template.category === filterCategory
-    return matchesSearch && matchesCategory
+    const matchesType = filterType === 'all' || template.type === filterType
+    return matchesSearch && matchesType
   })
 
-  const handleCreate = (data: Omit<Template, 'id' | 'createdAt'>) => {
-    addTemplate(data)
-    toast.success('Template created successfully!')
-  }
-
-  const handleUpdate = (data: Omit<Template, 'id' | 'createdAt'>) => {
-    if (editingTemplate) {
-      updateTemplate(editingTemplate.id, data)
-      toast.success('Template updated successfully!')
+  const getTypeBadge = (type: string) => {
+    const styles: Record<string, string> = {
+      FOUR_R: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+      A4_NEWSPAPER: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+      CUSTOM: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400'
     }
+    return styles[type] || styles.FOUR_R
   }
 
-  const handleDelete = (id: string) => {
-    deleteTemplate(id)
-    setDeleteConfirm(null)
-    toast.success('Template deleted successfully!')
-  }
-
-  const getCategoryBadge = (category: string) => {
-    const styles = {
-      '4R': 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-      'A4 Newspaper': 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
-      'GIF': 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400'
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      FOUR_R: '4R',
+      A4_NEWSPAPER: 'A4 Newspaper',
+      CUSTOM: 'Custom'
     }
-    return styles[category as keyof typeof styles] || styles['4R']
+    return labels[type] || type
   }
 
   const formatPrice = (price: number) => {
@@ -209,9 +278,16 @@ export function TemplateModule() {
     }).format(price)
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Template Frames</h1>
@@ -226,7 +302,6 @@ export function TemplateModule() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-300" />
@@ -239,18 +314,17 @@ export function TemplateModule() {
           />
         </div>
         <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
           className="px-4 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
-          <option value="all">All Categories</option>
-          <option value="4R">4R</option>
-          <option value="A4 Newspaper">A4 Newspaper</option>
-          <option value="GIF">GIF</option>
+          <option value="all">All Types</option>
+          <option value="FOUR_R">4R</option>
+          <option value="A4_NEWSPAPER">A4 Newspaper</option>
+          <option value="CUSTOM">Custom</option>
         </select>
       </div>
 
-      {/* Templates Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredTemplates.map((template) => (
           <motion.div
@@ -259,11 +333,10 @@ export function TemplateModule() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm border dark:border-gray-800"
           >
-            {/* Image Preview */}
             <div className="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               {template.imageUrl ? (
-                <img 
-                  src={template.imageUrl} 
+                <img
+                  src={template.imageUrl}
                   alt={template.name}
                   className="w-full h-full object-cover"
                 />
@@ -275,8 +348,8 @@ export function TemplateModule() {
             <div className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <h3 className="font-semibold text-gray-900 dark:text-white">{template.name}</h3>
-                <span className={`text-xs px-2 py-1 rounded-full ${getCategoryBadge(template.category)}`}>
-                  {template.category}
+                <span className={`text-xs px-2 py-1 rounded-full ${getTypeBadge(template.type)}`}>
+                  {getTypeLabel(template.type)}
                 </span>
               </div>
 
@@ -286,7 +359,7 @@ export function TemplateModule() {
 
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-xs px-2 py-1 rounded-full ${
-                  template.isActive 
+                  template.isActive
                     ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
                     : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                 }`}>
@@ -318,14 +391,12 @@ export function TemplateModule() {
         ))}
       </div>
 
-      {/* Empty State */}
-      {filteredTemplates.length === 0 && (
+      {filteredTemplates.length === 0 && !loading && (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400">No templates found</p>
         </div>
       )}
 
-      {/* Form Modal */}
       <AnimatePresence>
         {showForm && (
           <TemplateForm
@@ -339,7 +410,6 @@ export function TemplateModule() {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation */}
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div

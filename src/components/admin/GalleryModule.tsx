@@ -1,14 +1,12 @@
-// ============================================
-// Gallery Module - Admin Gallery Management
-// ============================================
-
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Search, Eye, Copy, Check, Trash2, RefreshCw } from 'lucide-react'
+import { Plus, Search, Eye, Copy, Check, RefreshCw, Loader2, QrCode } from 'lucide-react'
+import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { toast } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
 
-interface Gallery {
+interface GalleryData {
   id: string
   galleryCode: string
   photos: string[]
@@ -21,32 +19,27 @@ interface Gallery {
 }
 
 export function GalleryModule() {
-  const [galleries, setGalleries] = useState<Gallery[]>([])
+  const { searchQuery } = useDashboardStore()
+  const [galleries, setGalleries] = useState<GalleryData[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchGalleries()
-  }, [])
-
   const fetchGalleries = async () => {
+    setLoading(true)
     try {
-      const response = await fetch('/api/admin/gallery')
-      const data = await response.json()
-      if (data.success) {
-        setGalleries(data.data)
-      } else {
-        toast.error('Failed to fetch galleries')
-      }
-    } catch (error) {
-      console.error('Error fetching galleries:', error)
+      const res = await fetch('/api/admin/gallery')
+      const data = await res.json()
+      if (data.success) setGalleries(data.data)
+      else toast.error('Failed to fetch galleries')
+    } catch {
       toast.error('Failed to fetch galleries')
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => { fetchGalleries() }, [])
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code)
@@ -60,30 +53,29 @@ export function GalleryModule() {
   }
 
   const filteredGalleries = galleries.filter(gallery =>
-    gallery.galleryCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    gallery.outlet.toLowerCase().includes(searchTerm.toLowerCase())
+    gallery.galleryCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    gallery.outlet.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Gallery Management</h2>
-          <p className="text-gray-600 dark:text-gray-400">Manage photo galleries and codes</p>
+          <p className="text-gray-500 dark:text-gray-400">Manage photo galleries and codes</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={fetchGalleries}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -98,130 +90,129 @@ export function GalleryModule() {
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-300" />
         <input
           type="text"
           placeholder="Search galleries..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          value={searchQuery}
+          onChange={(e) => useDashboardStore.getState().setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
       </div>
 
-      {/* Gallery Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredGalleries.map((gallery) => (
-          <div key={gallery.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                  {gallery.galleryCode}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {gallery.outlet} • {gallery.frame}
-                </p>
+        {filteredGalleries.map((gallery, i) => (
+          <motion.div
+            key={gallery.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03 }}
+            className="bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-800 overflow-hidden"
+          >
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-purple-500" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{gallery.galleryCode}</h3>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  gallery.status === 'COMPLETED'
+                    ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+                }`}>
+                  {gallery.status}
+                </span>
               </div>
-              <span className={`px-2 py-1 text-xs rounded-full ${
-                gallery.status === 'COMPLETED'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-              }`}>
-                {gallery.status}
-              </span>
-            </div>
 
-            {/* Photo Preview */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {gallery.photos.slice(0, 4).map((photo, index) => (
-                <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                  <img
-                    src={photo}
-                    alt={`Photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-image.png'
-                    }}
-                  />
-                </div>
-              ))}
-              {gallery.photos.length > 4 && (
-                <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                  <span className="text-sm text-gray-500">+{gallery.photos.length - 4}</span>
-                </div>
-              )}
-            </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                {gallery.outlet} &bull; {gallery.frame}
+              </p>
 
-            {/* Actions */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleCopyCode(gallery.galleryCode)}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
-              >
-                {copiedCode === gallery.galleryCode ? (
-                  <Check className="w-4 h-4 text-green-600" />
-                ) : (
-                  <Copy className="w-4 h-4" />
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {gallery.photos.slice(0, 4).map((photo, idx) => (
+                  <div key={idx} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                    <img
+                      src={photo}
+                      alt={`Photo ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.src = '/placeholder-image.png' }}
+                    />
+                  </div>
+                ))}
+                {gallery.photos.length > 4 && (
+                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                    <span className="text-sm text-gray-500">+{gallery.photos.length - 4}</span>
+                  </div>
                 )}
-                {copiedCode === gallery.galleryCode ? 'Copied!' : 'Copy Code'}
-              </button>
-              <button
-                onClick={() => handleViewGallery(gallery.galleryCode)}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-              >
-                <Eye className="w-4 h-4" />
-                View
-              </button>
-            </div>
+              </div>
 
-            {/* Info */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleCopyCode(gallery.galleryCode)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm"
+                >
+                  {copiedCode === gallery.galleryCode ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  )}
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {copiedCode === gallery.galleryCode ? 'Copied!' : 'Copy Code'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => handleViewGallery(gallery.galleryCode)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                >
+                  <Eye className="w-4 h-4" />
+                  View
+                </button>
+              </div>
+
+              <div className="mt-4 pt-3 border-t dark:border-gray-800 flex justify-between text-sm text-gray-500 dark:text-gray-400">
                 <span>Rp {gallery.totalPrice.toLocaleString()}</span>
                 <span>{new Date(gallery.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
-      {filteredGalleries.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
-            <Eye className="w-16 h-16" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No galleries found</h3>
+      {filteredGalleries.length === 0 && !loading && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12"
+        >
+          <QrCode className="w-16 h-16 text-gray-200 dark:text-gray-700 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400">
-            {searchTerm ? 'Try adjusting your search terms' : 'Add your first gallery to get started'}
+            {searchQuery ? 'No galleries match your search' : 'No galleries found'}
           </p>
-        </div>
+        </motion.div>
       )}
 
-      {/* Add Gallery Modal */}
-      {showAddModal && (
-        <AddGalleryModal
-          onClose={() => setShowAddModal(false)}
-          onSuccess={() => {
-            setShowAddModal(false)
-            fetchGalleries()
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {showAddModal && (
+          <AddGalleryModal
+            onClose={() => setShowAddModal(false)}
+            onSuccess={() => {
+              setShowAddModal(false)
+              fetchGalleries()
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
-
-// ============================================
-// Add Gallery Modal Component
-// ============================================
 
 function AddGalleryModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [galleryCode, setGalleryCode] = useState('')
   const [photos, setPhotos] = useState<string[]>([])
   const [photoInput, setPhotoInput] = useState('')
   const [totalPrice, setTotalPrice] = useState(25000)
-  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   const handleAddPhoto = () => {
     if (photoInput.trim()) {
@@ -234,148 +225,150 @@ function AddGalleryModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     setPhotos(photos.filter((_, i) => i !== index))
   }
 
-  const handleAddGallery = async () => {
-    // If gallery code provided, must have photos
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (galleryCode.trim() && photos.length === 0) {
       toast.error('Photos are required when providing gallery code')
       return
     }
 
-    // If no gallery code and no photos, this will create new session
-    if (!galleryCode.trim() && photos.length === 0) {
-      // This is fine - will create empty session
-    }
-
-    setLoading(true)
+    setSaving(true)
     try {
-      let requestData: any = {
-        totalPrice,
-      }
-
+      const payload: any = { totalPrice }
       if (galleryCode.trim()) {
-        // Manual gallery code
-        requestData.galleryCode = galleryCode.trim()
-        requestData.photos = photos
+        payload.galleryCode = galleryCode.trim()
+        payload.photos = photos
       } else {
-        // Auto-generate new session
-        const outlet = await fetch('/api/admin/outlets').then(r => r.json())
-        if (outlet.success && outlet.data.length > 0) {
-          requestData.outletId = outlet.data[0].id
+        const outletRes = await fetch('/api/admin/outlets')
+        const outletData = await outletRes.json()
+        if (outletData.success && outletData.data.length > 0) {
+          payload.outletId = outletData.data[0].id
         } else {
           toast.error('No outlet found')
           return
         }
       }
 
-      const response = await fetch('/api/admin/gallery', {
+      const res = await fetch('/api/admin/gallery', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
-
-      const data = await response.json()
-
+      const data = await res.json()
       if (data.success) {
-        toast.success(galleryCode.trim() ? 'Gallery added successfully!' : 'New gallery session created!')
+        toast.success(galleryCode.trim() ? 'Gallery added!' : 'Gallery session created!')
         onSuccess()
       } else {
         toast.error(data.error || 'Failed to add gallery')
       }
-    } catch (error) {
-      console.error('Error adding gallery:', error)
+    } catch {
       toast.error('Failed to add gallery')
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add New Gallery</h3>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b dark:border-gray-800">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Gallery</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+            <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        <form onSubmit={handleAddGallery} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Gallery Code <span className="text-gray-500">(optional - will auto-generate if empty)</span>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">
+              Gallery Code <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={galleryCode}
               onChange={(e) => setGalleryCode(e.target.value.toUpperCase())}
-              placeholder="e.g., MHN2 (leave empty for auto-generate)"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="e.g. MHN2 (leave empty for auto-generate)"
+              className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Total Price (Rp)
-            </label>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Total Price (Rp)</label>
             <input
               type="number"
               value={totalPrice}
               onChange={(e) => setTotalPrice(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Photos
-            </label>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Photos</label>
             <div className="flex gap-2 mb-2">
               <input
                 type="text"
                 value={photoInput}
                 onChange={(e) => setPhotoInput(e.target.value)}
                 placeholder="/photos/photo1.jpg"
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="flex-1 px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddPhoto() } }}
               />
               <button
                 type="button"
                 onClick={handleAddPhoto}
-                className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 Add
               </button>
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto">
-              {photos.map((photo, index) => (
-                <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{photo}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePhoto(index)}
-                    className="text-red-500 hover:text-red-700 ml-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {photos.length > 0 && (
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {photos.map((photo, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg">
+                    <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{photo}</span>
+                    <button type="button" onClick={() => handleRemovePhoto(index)} className="text-red-500 hover:text-red-700 shrink-0 ml-2">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="flex-1 px-4 py-2 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={saving}
+              className="flex-1 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
             >
-              {loading ? 'Adding...' : 'Add Gallery'}
+              {saving ? 'Adding...' : 'Add Gallery'}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

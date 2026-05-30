@@ -1,65 +1,79 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  MapPin, 
-  Wifi, 
-  WifiOff,
-  AlertCircle,
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  MapPin,
+  Phone,
   X,
-  Check
+  Check,
+  Cpu,
+  Globe,
+  Loader2
 } from 'lucide-react'
-import { useDashboardStore, Outlet } from '@/lib/stores/dashboard-store'
+import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ============================================
-// Outlet Form Component
-// ============================================
+interface OutletData {
+  id: string
+  name: string
+  address: string
+  phone: string
+  latitude: number
+  longitude: number
+  isActive: boolean
+  machineId: string
+  createdAt: string
+}
 
 interface OutletFormProps {
-  outlet?: Outlet | null
+  outlet?: OutletData | null
   onClose: () => void
-  onSubmit: (data: Omit<Outlet, 'id' | 'createdAt'>) => void
+  onSubmit: (data: {
+    name: string
+    address: string
+    phone: string
+    latitude: number
+    longitude: number
+    isActive: boolean
+    machineId: string
+  }) => void
 }
 
 function OutletForm({ outlet, onClose, onSubmit }: OutletFormProps) {
   const [formData, setFormData] = useState({
     name: outlet?.name || '',
-    location: outlet?.location || '',
-    mapsUrl: outlet?.mapsUrl || '',
-    status: outlet?.status || 'offline' as const,
-    features: {
-      qris: outlet?.features.qris ?? true,
-      voucher: outlet?.features.voucher ?? true,
-      cashless: outlet?.features.cashless ?? true,
-    },
-    lastHeartbeat: outlet?.lastHeartbeat || new Date().toISOString()
+    address: outlet?.address || '',
+    phone: outlet?.phone || '',
+    latitude: outlet?.latitude ?? 0,
+    longitude: outlet?.longitude ?? 0,
+    isActive: outlet?.isActive ?? true,
+    machineId: outlet?.machineId || ''
   })
 
-  // Update form when outlet prop changes (for edit mode)
   useEffect(() => {
     setFormData({
       name: outlet?.name || '',
-      location: outlet?.location || '',
-      mapsUrl: outlet?.mapsUrl || '',
-      status: outlet?.status || 'offline' as const,
-      features: {
-        qris: outlet?.features.qris ?? true,
-        voucher: outlet?.features.voucher ?? true,
-        cashless: outlet?.features.cashless ?? true,
-      },
-      lastHeartbeat: outlet?.lastHeartbeat || new Date().toISOString()
+      address: outlet?.address || '',
+      phone: outlet?.phone || '',
+      latitude: outlet?.latitude ?? 0,
+      longitude: outlet?.longitude ?? 0,
+      isActive: outlet?.isActive ?? true,
+      machineId: outlet?.machineId || ''
     })
   }, [outlet])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    onSubmit({
+      ...formData,
+      latitude: Number(formData.latitude),
+      longitude: Number(formData.longitude)
+    })
     onClose()
   }
 
@@ -100,50 +114,45 @@ function OutletForm({ outlet, onClose, onSubmit }: OutletFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Location</label>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Address</label>
             <input
               type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Pick Location on Map</label>
-            <div className="space-y-2">
-              <div className="relative w-full h-64 rounded-lg overflow-hidden border dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
-                <iframe
-                  id="map-embed"
-                  className="w-full h-full"
-                  src={formData.mapsUrl || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126748.56398935027!2d106.698688671875!3d-6.208763868808566!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f5390917b5c7%3A0x2e69f5390917b5c7!2sJakarta!5e0!3m2!1sen!2sid!4v1620000000000!5m2!1sen!2sid"}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  window.open('https://www.google.com/maps', '_blank')
-                }}
-                className="w-full px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center gap-2"
-              >
-                <MapPin className="w-4 h-4" />
-                Open Google Maps to Select Location
-              </button>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                1. Click button above to open Google Maps{String.fromCharCode(10)}
-                2. Navigate to your desired location{String.fromCharCode(10)}
-                3. Click Share {'->'} Embed a map{String.fromCharCode(10)}
-                4. Copy the src URL and paste below
-              </p>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Phone</label>
+            <input
+              type="text"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Latitude</label>
               <input
-                type="url"
-                value={formData.mapsUrl}
-                onChange={(e) => setFormData({ ...formData, mapsUrl: e.target.value })}
-                placeholder="Paste Google Maps embed URL here..."
+                type="number"
+                step="any"
+                value={formData.latitude}
+                onChange={(e) => setFormData({ ...formData, latitude: e.target.value as unknown as number })}
+                className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Longitude</label>
+              <input
+                type="number"
+                step="any"
+                value={formData.longitude}
+                onChange={(e) => setFormData({ ...formData, longitude: e.target.value as unknown as number })}
                 className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 required
               />
@@ -151,58 +160,25 @@ function OutletForm({ outlet, onClose, onSubmit }: OutletFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'online' | 'offline' | 'error' })}
-              className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-              <option value="error">Error</option>
-            </select>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Machine ID</label>
+            <input
+              type="text"
+              value={formData.machineId}
+              onChange={(e) => setFormData({ ...formData, machineId: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Features</label>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.features.qris}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    features: { ...formData.features, qris: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-                <span className="text-sm text-gray-900 dark:text-white">QRIS Payment</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.features.voucher}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    features: { ...formData.features, voucher: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-                <span className="text-sm text-gray-900 dark:text-white">Voucher</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.features.cashless}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    features: { ...formData.features, cashless: e.target.checked }
-                  })}
-                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-                <span className="text-sm text-gray-900 dark:text-white">Cashless Payment</span>
-              </label>
-            </div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">Active</span>
+            </label>
           </div>
 
           <div className="flex gap-2 pt-4">
@@ -226,64 +202,87 @@ function OutletForm({ outlet, onClose, onSubmit }: OutletFormProps) {
   )
 }
 
-// ============================================
-// Outlet Module Component
-// ============================================
-
 export function OutletModule() {
-  const { outlets, addOutlet, updateOutlet, deleteOutlet, searchQuery } = useDashboardStore()
+  const { searchQuery } = useDashboardStore()
+  const [outlets, setOutlets] = useState<OutletData[]>([])
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null)
+  const [editingOutlet, setEditingOutlet] = useState<OutletData | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  const fetchOutlets = async () => {
+    try {
+      const res = await fetch('/api/admin/outlets')
+      const data = await res.json()
+      if (data.success) setOutlets(data.data)
+      else toast.error('Failed to load outlets')
+    } catch {
+      toast.error('Failed to load outlets')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchOutlets() }, [])
+
+  const handleCreate = async (formData: any) => {
+    const res = await fetch('/api/admin/outlets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Outlet created successfully!')
+      fetchOutlets()
+    } else {
+      toast.error(data.error || 'Failed to create outlet')
+    }
+  }
+
+  const handleUpdate = async (formData: any) => {
+    if (!editingOutlet) return
+    const res = await fetch(`/api/admin/outlets?id=${editingOutlet.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Outlet updated successfully!')
+      fetchOutlets()
+    } else {
+      toast.error(data.error || 'Failed to update outlet')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    const res = await fetch(`/api/admin/outlets?id=${id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Outlet deleted successfully!')
+      setDeleteConfirm(null)
+      fetchOutlets()
+    } else {
+      toast.error(data.error || 'Failed to delete outlet')
+    }
+  }
 
   const filteredOutlets = outlets.filter(outlet =>
     outlet.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    outlet.location.toLowerCase().includes(searchQuery.toLowerCase())
+    outlet.address.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleCreate = (data: Omit<Outlet, 'id' | 'createdAt'>) => {
-    addOutlet(data)
-    toast.success('Outlet created successfully!')
-  }
-
-  const handleUpdate = (data: Omit<Outlet, 'id' | 'createdAt'>) => {
-    if (editingOutlet) {
-      updateOutlet(editingOutlet.id, data)
-      toast.success('Outlet updated successfully!')
-    }
-  }
-
-  const handleDelete = (id: string) => {
-    deleteOutlet(id)
-    setDeleteConfirm(null)
-    toast.success('Outlet deleted successfully!')
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'online':
-        return <Wifi className="w-4 h-4 text-green-500" />
-      case 'offline':
-        return <WifiOff className="w-4 h-4 text-gray-400" />
-      case 'error':
-        return <AlertCircle className="w-4 h-4 text-red-500" />
-      default:
-        return null
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      online: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-      offline: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-      error: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-    }
-    return styles[status as keyof typeof styles] || styles.offline
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Outlet Management</h1>
@@ -298,7 +297,6 @@ export function OutletModule() {
         </button>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-300" />
         <input
@@ -310,7 +308,6 @@ export function OutletModule() {
         />
       </div>
 
-      {/* Outlets Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredOutlets.map((outlet) => (
           <motion.div
@@ -321,34 +318,40 @@ export function OutletModule() {
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
-                {getStatusIcon(outlet.status)}
+                <div className={`w-2.5 h-2.5 rounded-full ${outlet.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
                 <h3 className="font-semibold text-gray-900 dark:text-white">{outlet.name}</h3>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadge(outlet.status)}`}>
-                {outlet.status}
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                outlet.isActive
+                  ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+              }`}>
+                {outlet.isActive ? 'Active' : 'Inactive'}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
-              <MapPin className="w-4 h-4" />
-              <span>{outlet.location}</span>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              {outlet.features.qris && (
-                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                  QRIS
-                </span>
+            <div className="space-y-1.5 text-sm text-gray-500 dark:text-gray-400 mb-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 shrink-0" />
+                <span className="truncate">{outlet.address}</span>
+              </div>
+              {outlet.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 shrink-0" />
+                  <span>{outlet.phone}</span>
+                </div>
               )}
-              {outlet.features.voucher && (
-                <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                  Voucher
-                </span>
+              {outlet.machineId && (
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-4 h-4 shrink-0" />
+                  <span className="font-mono text-xs">{outlet.machineId}</span>
+                </div>
               )}
-              {outlet.features.cashless && (
-                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                  Cashless
-                </span>
+              {(outlet.latitude || outlet.longitude) && (
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 shrink-0" />
+                  <span className="text-xs">{outlet.latitude}, {outlet.longitude}</span>
+                </div>
               )}
             </div>
 
@@ -375,14 +378,12 @@ export function OutletModule() {
         ))}
       </div>
 
-      {/* Empty State */}
-      {filteredOutlets.length === 0 && (
+      {filteredOutlets.length === 0 && !loading && (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400">No outlets found</p>
         </div>
       )}
 
-      {/* Form Modal */}
       <AnimatePresence>
         {showForm && (
           <OutletForm
@@ -396,7 +397,6 @@ export function OutletModule() {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation */}
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div

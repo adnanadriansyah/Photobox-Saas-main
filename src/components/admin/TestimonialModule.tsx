@@ -1,45 +1,81 @@
 'use client'
 
-import { useState } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import { useState, useEffect } from 'react'
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   Star,
   MessageSquare,
   X,
   Check,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Loader2
 } from 'lucide-react'
-import { useDashboardStore, Testimonial } from '@/lib/stores/dashboard-store'
+import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ============================================
-// Testimonial Form Component
-// ============================================
+interface TestimonialData {
+  id: string
+  customerName: string
+  message: string
+  rating: number
+  outletId: string | null
+  isApproved: boolean
+  createdAt: string
+}
+
+interface OutletOption {
+  id: string
+  name: string
+}
 
 interface TestimonialFormProps {
-  testimonial?: Testimonial | null
+  testimonial?: TestimonialData | null
   onClose: () => void
-  onSubmit: (data: Omit<Testimonial, 'id' | 'createdAt'>) => void
+  onSubmit: (data: any) => void
 }
 
 function TestimonialForm({ testimonial, onClose, onSubmit }: TestimonialFormProps) {
-  const { outlets } = useDashboardStore()
+  const [outlets, setOutlets] = useState<OutletOption[]>([])
   const [formData, setFormData] = useState({
     customerName: testimonial?.customerName || '',
+    message: testimonial?.message || '',
     rating: testimonial?.rating || 5,
-    comment: testimonial?.comment || '',
     outletId: testimonial?.outletId || '',
     isApproved: testimonial?.isApproved ?? false
   })
 
+  useEffect(() => {
+    fetch('/api/admin/outlets?take=200')
+      .then(r => r.json())
+      .then(data => { if (data.success) setOutlets(data.data) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    setFormData({
+      customerName: testimonial?.customerName || '',
+      message: testimonial?.message || '',
+      rating: testimonial?.rating || 5,
+      outletId: testimonial?.outletId || '',
+      isApproved: testimonial?.isApproved ?? false
+    })
+  }, [testimonial])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    const payload: any = {
+      customerName: formData.customerName,
+      message: formData.message,
+      rating: formData.rating,
+      isApproved: formData.isApproved
+    }
+    if (formData.outletId) payload.outletId = formData.outletId
+    onSubmit(payload)
     onClose()
   }
 
@@ -85,7 +121,6 @@ function TestimonialForm({ testimonial, onClose, onSubmit }: TestimonialFormProp
               value={formData.outletId}
               onChange={(e) => setFormData({ ...formData, outletId: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
             >
               <option value="">Select Outlet</option>
               {outlets.map((outlet) => (
@@ -104,12 +139,12 @@ function TestimonialForm({ testimonial, onClose, onSubmit }: TestimonialFormProp
                   onClick={() => setFormData({ ...formData, rating: star })}
                   className="p-1"
                 >
-                  <Star 
+                  <Star
                     className={`w-6 h-6 ${
-                      star <= formData.rating 
-                        ? 'text-yellow-400 fill-yellow-400' 
+                      star <= formData.rating
+                        ? 'text-yellow-400 fill-yellow-400'
                         : 'text-gray-300 dark:text-gray-600'
-                    }`} 
+                    }`}
                   />
                 </button>
               ))}
@@ -117,26 +152,14 @@ function TestimonialForm({ testimonial, onClose, onSubmit }: TestimonialFormProp
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Comment</label>
+            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-white">Message</label>
             <textarea
-              value={formData.comment}
-              onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               rows={4}
               className="w-full px-3 py-2 rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.isApproved}
-                onChange={(e) => setFormData({ ...formData, isApproved: e.target.checked })}
-                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-              />
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Approved</span>
-            </label>
           </div>
 
           <div className="flex gap-2 pt-4">
@@ -160,56 +183,127 @@ function TestimonialForm({ testimonial, onClose, onSubmit }: TestimonialFormProp
   )
 }
 
-// ============================================
-// Testimonial Module Component
-// ============================================
-
 export function TestimonialModule() {
-  const { testimonials, outlets, addTestimonial, updateTestimonial, deleteTestimonial, searchQuery } = useDashboardStore()
+  const { searchQuery } = useDashboardStore()
+  const [testimonials, setTestimonials] = useState<TestimonialData[]>([])
+  const [outlets, setOutlets] = useState<OutletOption[]>([])
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null)
+  const [editingTestimonial, setEditingTestimonial] = useState<TestimonialData | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
+  const fetchTestimonials = async () => {
+    try {
+      const res = await fetch('/api/admin/testimonials')
+      const data = await res.json()
+      if (data.success) setTestimonials(data.data)
+      else toast.error('Failed to load testimonials')
+    } catch {
+      toast.error('Failed to load testimonials')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchOutlets = async () => {
+    try {
+      const res = await fetch('/api/admin/outlets?take=200')
+      const data = await res.json()
+      if (data.success) setOutlets(data.data)
+    } catch {}
+  }
+
+  useEffect(() => {
+    fetchTestimonials()
+    fetchOutlets()
+  }, [])
+
+  const handleCreate = async (formData: any) => {
+    const res = await fetch('/api/admin/testimonials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Testimonial created successfully!')
+      fetchTestimonials()
+    } else {
+      toast.error(data.error || 'Failed to create testimonial')
+    }
+  }
+
+  const handleUpdate = async (formData: any) => {
+    if (!editingTestimonial) return
+    const res = await fetch(`/api/admin/testimonials?id=${editingTestimonial.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Testimonial updated successfully!')
+      fetchTestimonials()
+    } else {
+      toast.error(data.error || 'Failed to update testimonial')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    const res = await fetch(`/api/admin/testimonials?id=${id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Testimonial deleted successfully!')
+      setDeleteConfirm(null)
+      fetchTestimonials()
+    } else {
+      toast.error(data.error || 'Failed to delete testimonial')
+    }
+  }
+
+  const handleApprove = async (id: string) => {
+    const res = await fetch(`/api/admin/testimonials?id=${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isApproved: true })
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Testimonial approved!')
+      fetchTestimonials()
+    } else {
+      toast.error(data.error || 'Failed to approve testimonial')
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    const res = await fetch(`/api/admin/testimonials?id=${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isApproved: false })
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Testimonial rejected!')
+      fetchTestimonials()
+    } else {
+      toast.error(data.error || 'Failed to reject testimonial')
+    }
+  }
+
   const filteredTestimonials = testimonials.filter(testimonial => {
-    const matchesSearch = 
+    const matchesSearch =
       testimonial.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      testimonial.comment.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || 
+      testimonial.message.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = filterStatus === 'all' ||
       (filterStatus === 'approved' && testimonial.isApproved) ||
       (filterStatus === 'pending' && !testimonial.isApproved)
     return matchesSearch && matchesStatus
   })
 
-  const handleCreate = (data: Omit<Testimonial, 'id' | 'createdAt'>) => {
-    addTestimonial(data)
-    toast.success('Testimonial added successfully!')
-  }
-
-  const handleUpdate = (data: Omit<Testimonial, 'id' | 'createdAt'>) => {
-    if (editingTestimonial) {
-      updateTestimonial(editingTestimonial.id, data)
-      toast.success('Testimonial updated successfully!')
-    }
-  }
-
-  const handleDelete = (id: string) => {
-    deleteTestimonial(id)
-    setDeleteConfirm(null)
-    toast.success('Testimonial deleted successfully!')
-  }
-
-  const handleApprove = (id: string) => {
-    updateTestimonial(id, { isApproved: true })
-    toast.success('Testimonial approved!')
-  }
-
-  const handleReject = (id: string) => {
-    updateTestimonial(id, { isApproved: false })
-    toast.success('Testimonial rejected!')
-  }
-
-  const getOutletName = (outletId: string) => {
+  const getOutletName = (outletId: string | null) => {
+    if (!outletId) return 'Unknown Outlet'
     const outlet = outlets.find(o => o.id === outletId)
     return outlet?.name || 'Unknown Outlet'
   }
@@ -222,9 +316,16 @@ export function TestimonialModule() {
     })
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Testimonials</h1>
@@ -239,7 +340,6 @@ export function TestimonialModule() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-300" />
@@ -262,7 +362,6 @@ export function TestimonialModule() {
         </select>
       </div>
 
-      {/* Testimonials Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTestimonials.map((testimonial) => (
           <motion.div
@@ -287,19 +386,19 @@ export function TestimonialModule() {
 
             <div className="flex items-center gap-1 mb-3">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
+                <Star
                   key={star}
                   className={`w-4 h-4 ${
-                    star <= testimonial.rating 
-                      ? 'text-yellow-400 fill-yellow-400' 
+                    star <= testimonial.rating
+                      ? 'text-yellow-400 fill-yellow-400'
                       : 'text-gray-300 dark:text-gray-600'
-                  }`} 
+                  }`}
                 />
               ))}
             </div>
 
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-3">
-              "{testimonial.comment}"
+              &ldquo;{testimonial.message}&rdquo;
             </p>
 
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
@@ -348,14 +447,12 @@ export function TestimonialModule() {
         ))}
       </div>
 
-      {/* Empty State */}
-      {filteredTestimonials.length === 0 && (
+      {filteredTestimonials.length === 0 && !loading && (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400">No testimonials found</p>
         </div>
       )}
 
-      {/* Form Modal */}
       <AnimatePresence>
         {showForm && (
           <TestimonialForm
@@ -369,7 +466,6 @@ export function TestimonialModule() {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation */}
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div

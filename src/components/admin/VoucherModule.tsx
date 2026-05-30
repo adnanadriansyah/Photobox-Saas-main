@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import { useState, useEffect } from 'react'
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   Gift,
   Percent,
   DollarSign,
@@ -13,18 +13,30 @@ import {
   X,
   Check,
   Copy,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react'
-import { useDashboardStore, Voucher } from '@/lib/stores/dashboard-store'
+import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ─── Shared ease ───────────────────────────────────────────────────────────────
 const ease = [0.22, 1, 0.36, 1] as const
 
-// ============================================
-// Copy Button — animated icon swap feedback
-// ============================================
+interface VoucherData {
+  id: string
+  code: string
+  type: string
+  value: number
+  minOrder: number
+  maxUses: number
+  usedCount: number
+  usageType: string
+  validFrom: string
+  validUntil: string
+  isActive: boolean
+  createdAt: string
+}
+
 function CopyButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
 
@@ -70,31 +82,46 @@ function CopyButton({ code }: { code: string }) {
   )
 }
 
-// ============================================
-// Voucher Form Modal — premium spring scale
-// ============================================
 interface VoucherFormProps {
-  voucher?: Voucher | null
+  voucher?: VoucherData | null
   onClose: () => void
-  onSubmit: (data: Omit<Voucher, 'id' | 'createdAt' | 'code' | 'usedCount'>) => void
+  onSubmit: (data: any) => void
 }
 
 function VoucherForm({ voucher, onClose, onSubmit }: VoucherFormProps) {
   const [formData, setFormData] = useState({
-    discountType: voucher?.discountType || 'percentage' as const,
-    discountValue: voucher?.discountValue || 0,
-    minPurchase: voucher?.minPurchase || 0,
-    maxDiscount: voucher?.maxDiscount || undefined as number | undefined,
-    usageLimit: voucher?.usageLimit || 100,
+    code: voucher?.code || '',
+    type: voucher?.type || 'PERCENTAGE',
+    value: voucher?.value ?? 0,
+    minOrder: voucher?.minOrder ?? 0,
+    maxUses: voucher?.maxUses ?? 100,
+    usageType: voucher?.usageType || 'MULTI_USE',
     validFrom: voucher?.validFrom ? voucher.validFrom.split('T')[0] : new Date().toISOString().split('T')[0],
     validUntil: voucher?.validUntil ? voucher.validUntil.split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     isActive: voucher?.isActive ?? true
   })
 
+  useEffect(() => {
+    setFormData({
+      code: voucher?.code || '',
+      type: voucher?.type || 'PERCENTAGE',
+      value: voucher?.value ?? 0,
+      minOrder: voucher?.minOrder ?? 0,
+      maxUses: voucher?.maxUses ?? 100,
+      usageType: voucher?.usageType || 'MULTI_USE',
+      validFrom: voucher?.validFrom ? voucher.validFrom.split('T')[0] : new Date().toISOString().split('T')[0],
+      validUntil: voucher?.validUntil ? voucher.validUntil.split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      isActive: voucher?.isActive ?? true
+    })
+  }, [voucher])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit({
       ...formData,
+      value: Number(formData.value),
+      minOrder: Number(formData.minOrder),
+      maxUses: Number(formData.maxUses),
       validFrom: new Date(formData.validFrom).toISOString(),
       validUntil: new Date(formData.validUntil).toISOString()
     })
@@ -119,7 +146,6 @@ function VoucherForm({ voucher, onClose, onSubmit }: VoucherFormProps) {
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Gradient header accent */}
         <div className="h-1 w-full bg-gradient-to-r from-pink-500 to-purple-600" />
 
         <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800">
@@ -143,29 +169,43 @@ function VoucherForm({ voucher, onClose, onSubmit }: VoucherFormProps) {
         <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
           <div>
             <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Kode Voucher
+            </label>
+            <input
+              type="text"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+              className={inputClass}
+              required
+              placeholder="e.g. PROMO50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Tipe Diskon
             </label>
             <select
-              value={formData.discountType}
-              onChange={(e) => setFormData({ ...formData, discountType: e.target.value as 'percentage' | 'fixed' })}
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               className={inputClass}
             >
-              <option value="percentage">Persentase (%)</option>
-              <option value="fixed">Nominal Tetap (Rp)</option>
+              <option value="PERCENTAGE">Persentase (%)</option>
+              <option value="FIXED">Nominal Tetap (Rp)</option>
             </select>
           </div>
 
           <div>
             <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Nilai Diskon {formData.discountType === 'percentage' ? '(%)' : '(Rp)'}
+              Nilai {formData.type === 'PERCENTAGE' ? '(%)' : '(Rp)'}
             </label>
             <input
               type="number"
-              value={formData.discountValue}
-              onChange={(e) => setFormData({ ...formData, discountValue: parseInt(e.target.value) || 0 })}
+              value={formData.value}
+              onChange={(e) => setFormData({ ...formData, value: parseInt(e.target.value) || 0 })}
               className={inputClass}
               required min="0"
-              max={formData.discountType === 'percentage' ? 100 : undefined}
+              max={formData.type === 'PERCENTAGE' ? 100 : undefined}
             />
           </div>
 
@@ -175,47 +215,46 @@ function VoucherForm({ voucher, onClose, onSubmit }: VoucherFormProps) {
             </label>
             <input
               type="number"
-              value={formData.minPurchase}
-              onChange={(e) => setFormData({ ...formData, minPurchase: parseInt(e.target.value) || 0 })}
+              value={formData.minOrder}
+              onChange={(e) => setFormData({ ...formData, minOrder: parseInt(e.target.value) || 0 })}
               className={inputClass}
               required min="0"
             />
           </div>
 
-          <AnimatePresence>
-            {formData.discountType === 'percentage' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25, ease }}
-              >
-                <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                  Maksimal Diskon (Rp)
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxDiscount || ''}
-                  onChange={(e) => setFormData({ ...formData, maxDiscount: parseInt(e.target.value) || undefined })}
-                  className={inputClass}
-                  min="0"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <div>
             <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Batas Pemakaian
+              Tipe Pemakaian
             </label>
-            <input
-              type="number"
-              value={formData.usageLimit}
-              onChange={(e) => setFormData({ ...formData, usageLimit: parseInt(e.target.value) || 0 })}
+            <select
+              value={formData.usageType}
+              onChange={(e) => setFormData({ ...formData, usageType: e.target.value })}
               className={inputClass}
-              required min="1"
-            />
+            >
+              <option value="MULTI_USE">Multi Use</option>
+              <option value="SINGLE_USE">Single Use</option>
+            </select>
           </div>
+
+          {formData.usageType === 'MULTI_USE' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease }}
+            >
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Batas Pemakaian
+              </label>
+              <input
+                type="number"
+                value={formData.maxUses}
+                onChange={(e) => setFormData({ ...formData, maxUses: parseInt(e.target.value) || 0 })}
+                className={inputClass}
+                required min="1"
+              />
+            </motion.div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             {(['validFrom', 'validUntil'] as const).map((field) => (
@@ -271,9 +310,6 @@ function VoucherForm({ voucher, onClose, onSubmit }: VoucherFormProps) {
   )
 }
 
-// ============================================
-// Voucher Card
-// ============================================
 function VoucherCard({
   voucher,
   index,
@@ -282,15 +318,16 @@ function VoucherCard({
   formatPrice,
   formatDate
 }: {
-  voucher: Voucher
+  voucher: VoucherData
   index: number
   onEdit: () => void
   onDelete: () => void
   formatPrice: (n: number) => string
   formatDate: (s: string) => string
 }) {
-  // Usage bar percentage
-  const usagePct = Math.min((voucher.usedCount / voucher.usageLimit) * 100, 100)
+  const usagePct = voucher.maxUses > 0
+    ? Math.min((voucher.usedCount / voucher.maxUses) * 100, 100)
+    : 0
 
   return (
     <motion.div
@@ -302,7 +339,6 @@ function VoucherCard({
       layout
       className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden group"
     >
-      {/* Top gradient bar (active = purple, inactive = gray) */}
       <div
         className="h-1 w-full transition-all duration-500"
         style={{
@@ -313,7 +349,6 @@ function VoucherCard({
       />
 
       <div className="p-4">
-        {/* Code row */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <motion.div
@@ -329,63 +364,61 @@ function VoucherCard({
           <CopyButton code={voucher.code} />
         </div>
 
-        {/* Discount value */}
         <div className="flex items-baseline gap-1.5 mb-4">
-          {voucher.discountType === 'percentage'
+          {voucher.type === 'PERCENTAGE'
             ? <Percent className="w-5 h-5 text-emerald-500 self-center" />
             : <DollarSign className="w-5 h-5 text-emerald-500 self-center" />
           }
           <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
-            {voucher.discountType === 'percentage'
-              ? `${voucher.discountValue}%`
-              : formatPrice(voucher.discountValue)
+            {voucher.type === 'PERCENTAGE'
+              ? `${voucher.value}%`
+              : formatPrice(voucher.value)
             }
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500 self-end pb-0.5">diskon</span>
         </div>
 
-        {/* Details */}
         <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400 mb-4">
           <div className="flex justify-between">
             <span>Min. pembelian</span>
-            <span className="font-semibold text-gray-700 dark:text-gray-300">{formatPrice(voucher.minPurchase)}</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">{formatPrice(voucher.minOrder)}</span>
           </div>
-          {voucher.maxDiscount && (
-            <div className="flex justify-between">
-              <span>Max. diskon</span>
-              <span className="font-semibold text-gray-700 dark:text-gray-300">{formatPrice(voucher.maxDiscount)}</span>
-            </div>
-          )}
+          <div className="flex justify-between">
+            <span>Tipe</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">
+              {voucher.usageType === 'SINGLE_USE' ? 'Single Use' : 'Multi Use'}
+            </span>
+          </div>
           <div className="flex items-center gap-1.5 pt-0.5">
             <Calendar className="w-3.5 h-3.5" />
             <span>{formatDate(voucher.validFrom)} – {formatDate(voucher.validUntil)}</span>
           </div>
         </div>
 
-        {/* Usage progress bar */}
-        <div className="mb-4">
-          <div className="flex justify-between text-xs mb-1.5">
-            <span className="text-gray-500 dark:text-gray-400">Pemakaian</span>
-            <span className="font-semibold text-gray-700 dark:text-gray-300">
-              {voucher.usedCount} / {voucher.usageLimit}
-            </span>
+        {voucher.usageType === 'MULTI_USE' && (
+          <div className="mb-4">
+            <div className="flex justify-between text-xs mb-1.5">
+              <span className="text-gray-500 dark:text-gray-400">Pemakaian</span>
+              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                {voucher.usedCount} / {voucher.maxUses}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${usagePct}%` }}
+                transition={{ duration: 0.8, delay: 0.2, ease }}
+                className="h-full rounded-full"
+                style={{
+                  background: usagePct > 80
+                    ? '#ef4444'
+                    : 'linear-gradient(90deg, #ec4899, #7c3aed)'
+                }}
+              />
+            </div>
           </div>
-          <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${usagePct}%` }}
-              transition={{ duration: 0.8, delay: 0.2, ease }}
-              className="h-full rounded-full"
-              style={{
-                background: usagePct > 80
-                  ? '#ef4444'
-                  : 'linear-gradient(90deg, #ec4899, #7c3aed)'
-              }}
-            />
-          </div>
-        </div>
+        )}
 
-        {/* Status badge */}
         <div className="flex items-center justify-between mb-4">
           <motion.span
             layout
@@ -402,7 +435,6 @@ function VoucherCard({
           </motion.span>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-2">
           <motion.button
             onClick={onEdit}
@@ -428,39 +460,80 @@ function VoucherCard({
   )
 }
 
-// ============================================
-// VoucherModule — Main Component
-// ============================================
 export function VoucherModule() {
-  const { vouchers, addVoucher, updateVoucher, deleteVoucher, searchQuery } = useDashboardStore()
-  const [showForm, setShowForm]           = useState(false)
-  const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null)
-  const [deleteConfirm, setDeleteConfirm]   = useState<string | null>(null)
-  const [filterStatus, setFilterStatus]     = useState<string>('all')
+  const { searchQuery } = useDashboardStore()
+  const [vouchers, setVouchers] = useState<VoucherData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingVoucher, setEditingVoucher] = useState<VoucherData | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+
+  const fetchVouchers = async () => {
+    try {
+      const res = await fetch('/api/admin/vouchers')
+      const data = await res.json()
+      if (data.success) setVouchers(data.data)
+      else toast.error('Failed to load vouchers')
+    } catch {
+      toast.error('Failed to load vouchers')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchVouchers() }, [])
+
+  const handleCreate = async (formData: any) => {
+    const res = await fetch('/api/admin/vouchers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Voucher berhasil dibuat!')
+      fetchVouchers()
+    } else {
+      toast.error(data.error || 'Gagal membuat voucher')
+    }
+  }
+
+  const handleUpdate = async (formData: any) => {
+    if (!editingVoucher) return
+    const res = await fetch(`/api/admin/vouchers?id=${editingVoucher.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Voucher berhasil diperbarui!')
+      fetchVouchers()
+    } else {
+      toast.error(data.error || 'Gagal memperbarui voucher')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    const res = await fetch(`/api/admin/vouchers?id=${id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (data.success) {
+      toast.success('Voucher dihapus.')
+      setDeleteConfirm(null)
+      fetchVouchers()
+    } else {
+      toast.error(data.error || 'Gagal menghapus voucher')
+    }
+  }
 
   const filteredVouchers = vouchers.filter(voucher => {
-    const matchesSearch  = voucher.code.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus  = filterStatus === 'all'
-      || (filterStatus === 'active'   && voucher.isActive)
+    const matchesSearch = voucher.code.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = filterStatus === 'all'
+      || (filterStatus === 'active' && voucher.isActive)
       || (filterStatus === 'inactive' && !voucher.isActive)
     return matchesSearch && matchesStatus
   })
-
-  const handleCreate = (data: Omit<Voucher, 'id' | 'createdAt' | 'code' | 'usedCount'>) => {
-    addVoucher(data)
-    toast.success('Voucher berhasil dibuat! 🎉')
-  }
-  const handleUpdate = (data: Omit<Voucher, 'id' | 'createdAt' | 'code' | 'usedCount'>) => {
-    if (editingVoucher) {
-      updateVoucher(editingVoucher.id, data)
-      toast.success('Voucher berhasil diperbarui!')
-    }
-  }
-  const handleDelete = (id: string) => {
-    deleteVoucher(id)
-    setDeleteConfirm(null)
-    toast.success('Voucher dihapus.')
-  }
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price)
@@ -468,9 +541,16 @@ export function VoucherModule() {
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      {/* ── Header ─────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -493,7 +573,6 @@ export function VoucherModule() {
         </motion.button>
       </motion.div>
 
-      {/* ── Filters ────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -521,7 +600,6 @@ export function VoucherModule() {
         </select>
       </motion.div>
 
-      {/* ── Voucher Grid ───────────────────────────────────────── */}
       <AnimatePresence mode="popLayout">
         {filteredVouchers.length > 0 ? (
           <motion.div
@@ -560,7 +638,6 @@ export function VoucherModule() {
         )}
       </AnimatePresence>
 
-      {/* ── Voucher Form Modal ─────────────────────────────────── */}
       <AnimatePresence>
         {showForm && (
           <VoucherForm
@@ -571,7 +648,6 @@ export function VoucherModule() {
         )}
       </AnimatePresence>
 
-      {/* ── Delete Confirmation Modal ──────────────────────────── */}
       <AnimatePresence>
         {deleteConfirm && (
           <motion.div
