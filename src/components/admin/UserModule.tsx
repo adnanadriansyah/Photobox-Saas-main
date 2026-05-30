@@ -93,68 +93,70 @@ function UserForm({ user, onClose, onSubmit }: UserFormProps) {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm max-h-[85vh] flex flex-col"
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-800 shrink-0">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-800 shrink-0">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {user ? 'Edit User' : 'Add New User'}
           </h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
+        {/* Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
             <div>
-              <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                 Full Name
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                 Email
               </label>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                 {user ? 'New Password (leave blank to keep current)' : 'Password'}
               </label>
               <input
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 required={!user}
                 minLength={6}
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                 Role
               </label>
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
               >
                 <option value="SUPER_ADMIN">Super Admin</option>
                 <option value="OWNER">Owner</option>
@@ -165,13 +167,13 @@ function UserForm({ user, onClose, onSubmit }: UserFormProps) {
 
             {formData.role !== 'SUPER_ADMIN' && (
               <div>
-                <label className="block text-[11px] font-semibold mb-1 text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                <label className="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                   Assigned Outlet
                 </label>
                 <select
                   value={formData.outletId}
                   onChange={(e) => setFormData({ ...formData, outletId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl border dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 >
                   <option value="">Select Outlet</option>
                   {outlets.map((outlet) => (
@@ -181,8 +183,8 @@ function UserForm({ user, onClose, onSubmit }: UserFormProps) {
               </div>
             )}
 
-            <div>
-              <label className="flex items-center gap-2.5 cursor-pointer group">
+            <div className="pt-1">
+              <label className="flex items-center gap-3 cursor-pointer group">
                 <div className="relative">
                   <input
                     type="checkbox"
@@ -190,25 +192,26 @@ function UserForm({ user, onClose, onSubmit }: UserFormProps) {
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-purple-600 transition-colors" />
-                  <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                  <div className="w-10 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-purple-600 transition-colors" />
+                  <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Active</span>
               </label>
             </div>
           </div>
 
-          <div className="px-4 py-3 border-t dark:border-gray-800 flex gap-2 shrink-0">
+          {/* Footer */}
+          <div className="px-6 py-4 border-t dark:border-gray-800 flex gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 rounded-xl border dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-xl border dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/25"
             >
               {user ? 'Update' : 'Create'}
             </button>
