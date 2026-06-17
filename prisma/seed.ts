@@ -187,6 +187,114 @@ async function main() {
     },
   })
 
+  // Korean Style Template
+  await prisma.frameTemplate.upsert({
+    where: { id: 'frame-korean-001' },
+    update: {},
+    create: {
+      id: 'frame-korean-001',
+      tenantId: tenant.id,
+      name: 'Korean Style',
+      type: 'CUSTOM',
+      imageUrl: '/photos/frame-korean-1200x1800.png',
+      thumbnailUrl: '/photos/frame-korean-1200x1800.png',
+      width: 1200,
+      height: 1800,
+      price: 25000,
+      isActive: true,
+    },
+  })
+
+  // Nature Template
+  await prisma.frameTemplate.upsert({
+    where: { id: 'frame-nature-001' },
+    update: {},
+    create: {
+      id: 'frame-nature-001',
+      tenantId: tenant.id,
+      name: 'Natural',
+      type: 'CUSTOM',
+      imageUrl: '/photos/frame-nature-1200x1800.png',
+      thumbnailUrl: '/photos/frame-nature-1200x1800.png',
+      width: 1200,
+      height: 1800,
+      price: 25000,
+      isActive: true,
+    },
+  })
+
+  // Night Sky Template
+  await prisma.frameTemplate.upsert({
+    where: { id: 'frame-night-001' },
+    update: {},
+    create: {
+      id: 'frame-night-001',
+      tenantId: tenant.id,
+      name: 'Night Sky',
+      type: 'CUSTOM',
+      imageUrl: '/photos/frame-night-1200x1800.png',
+      thumbnailUrl: '/photos/frame-night-1200x1800.png',
+      width: 1200,
+      height: 1800,
+      price: 25000,
+      isActive: true,
+    },
+  })
+
+  // Floral Template
+  await prisma.frameTemplate.upsert({
+    where: { id: 'frame-floral-001' },
+    update: {},
+    create: {
+      id: 'frame-floral-001',
+      tenantId: tenant.id,
+      name: 'Floral',
+      type: 'CUSTOM',
+      imageUrl: '/photos/frame-floral-1200x1800.png',
+      thumbnailUrl: '/photos/frame-floral-1200x1800.png',
+      width: 1200,
+      height: 1800,
+      price: 25000,
+      isActive: true,
+    },
+  })
+
+  // Beach Template
+  await prisma.frameTemplate.upsert({
+    where: { id: 'frame-beach-001' },
+    update: {},
+    create: {
+      id: 'frame-beach-001',
+      tenantId: tenant.id,
+      name: 'Beach',
+      type: 'CUSTOM',
+      imageUrl: '/photos/frame-beach-1200x1800.png',
+      thumbnailUrl: '/photos/frame-beach-1200x1800.png',
+      width: 1200,
+      height: 1800,
+      price: 25000,
+      isActive: true,
+    },
+  })
+
+  // Retro Template
+  await prisma.frameTemplate.upsert({
+    where: { id: 'frame-retro-001' },
+    update: {},
+    create: {
+      id: 'frame-retro-001',
+      tenantId: tenant.id,
+      name: 'Retro',
+      type: 'CUSTOM',
+      imageUrl: '/photos/frame-retro-1200x1800.png',
+      thumbnailUrl: '/photos/frame-retro-1200x1800.png',
+      width: 1200,
+      height: 1800,
+      price: 25000,
+      isActive: true,
+    },
+  })
+
   console.log('✅ Created Frame Templates')
 
   // ============================================

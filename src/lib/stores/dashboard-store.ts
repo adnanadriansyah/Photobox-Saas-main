@@ -22,7 +22,7 @@ export interface Outlet {
 export interface Template {
   id: string
   name: string
-  category: '4R' | 'A4 Newspaper' | 'GIF'
+  category: '4R' | 'A4 Newspaper' | 'GIF' | 'Custom'
   imageUrl: string
   price: number
   isActive: boolean
@@ -220,6 +220,60 @@ const mockTemplates: Template[] = [
     price: 35000,
     isActive: true,
     createdAt: '2024-02-01T10:00:00Z'
+  },
+  {
+    id: '4',
+    name: 'Korean Style',
+    category: 'Custom',
+    imageUrl: '/photos/frame-korean-1200x1800.png',
+    price: 25000,
+    isActive: true,
+    createdAt: '2024-06-01T10:00:00Z'
+  },
+  {
+    id: '5',
+    name: 'Natural',
+    category: 'Custom',
+    imageUrl: '/photos/frame-nature-1200x1800.png',
+    price: 25000,
+    isActive: true,
+    createdAt: '2024-06-01T10:00:00Z'
+  },
+  {
+    id: '6',
+    name: 'Night Sky',
+    category: 'Custom',
+    imageUrl: '/photos/frame-night-1200x1800.png',
+    price: 25000,
+    isActive: true,
+    createdAt: '2024-06-01T10:00:00Z'
+  },
+  {
+    id: '7',
+    name: 'Floral',
+    category: 'Custom',
+    imageUrl: '/photos/frame-floral-1200x1800.png',
+    price: 25000,
+    isActive: true,
+    createdAt: '2024-06-01T10:00:00Z'
+  },
+  {
+    id: '8',
+    name: 'Beach',
+    category: 'Custom',
+    imageUrl: '/photos/frame-beach-1200x1800.png',
+    price: 25000,
+    isActive: true,
+    createdAt: '2024-06-01T10:00:00Z'
+  },
+  {
+    id: '9',
+    name: 'Retro',
+    category: 'Custom',
+    imageUrl: '/photos/frame-retro-1200x1800.png',
+    price: 25000,
+    isActive: true,
+    createdAt: '2024-06-01T10:00:00Z'
   }
 ]
 
