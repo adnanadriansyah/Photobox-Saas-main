@@ -1,7 +1,7 @@
 // ============================================
 // Photo Compositing Utility
-// Composites captured photos into frame template
-// with dynamic slot positions based on frame image size
+// Canvas selalu 1080x1920, frame di-stretch ke ukuran itu
+// Slot menggunakan koordinat original (hardcoded untuk 1080x1920)
 // ============================================
 
 export interface PhotoSlot {
@@ -22,10 +22,9 @@ export interface CompositingOptions {
   filter?: string
 }
 
-/**
- * Load an image and return it as an HTMLImageElement
- * Skips crossOrigin for base64 data URLs to avoid tainted canvas errors
- */
+const CANVAS_WIDTH = 1080
+const CANVAS_HEIGHT = 1920
+
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -33,10 +32,10 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
       img.crossOrigin = 'anonymous'
     }
     img.onload = () => {
-      console.log(`[loadImage] Loaded: ${src.substring(0, 60)} (${img.naturalWidth}x${img.naturalHeight})`)
+      console.log(`[loadImage] OK ${src.substring(0, 40)}... (${img.naturalWidth}x${img.naturalHeight})`)
       resolve(img)
     }
-    img.onerror = () => reject(new Error(`Failed to load image: ${src.substring(0, 100)}`))
+    img.onerror = () => reject(new Error(`Failed to load image: ${src.substring(0, 80)}`))
     img.src = src
   })
 }
@@ -62,12 +61,16 @@ function roundedRect(
   ctx.closePath()
 }
 
+/**
+ * Draw photo into slot with "cover" fit (crop to fill, centered)
+ * Handles any aspect ratio (landscape/portrait/square)
+ */
 function drawPhotoCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   slot: PhotoSlot
 ): void {
-  const imgRatio = img.width / img.height
+  const imgRatio = img.naturalWidth / img.naturalHeight
   const slotRatio = slot.width / slot.height
 
   let drawWidth: number
@@ -76,175 +79,152 @@ function drawPhotoCover(
   let offsetY: number
 
   if (imgRatio > slotRatio) {
+    // Photo lebih lebar dari slot → fit by height, crop horizontal
     drawHeight = slot.height
-    drawWidth = img.width * (drawHeight / img.height)
+    drawWidth = img.naturalWidth * (drawHeight / img.naturalHeight)
     offsetX = slot.x - (drawWidth - slot.width) / 2
     offsetY = slot.y
   } else {
+    // Photo lebih tinggi dari slot → fit by width, crop vertikal
     drawWidth = slot.width
-    drawHeight = img.height * (drawWidth / img.width)
+    drawHeight = img.naturalHeight * (drawWidth / img.naturalWidth)
     offsetX = slot.x
     offsetY = slot.y - (drawHeight - slot.height) / 2
   }
 
+  console.log(`  [drawPhoto] slot=(${slot.x},${slot.y} ${slot.width}x${slot.height}) img=${img.naturalWidth}x${img.naturalHeight} draw=(${Math.round(offsetX)},${Math.round(offsetY)} ${Math.round(drawWidth)}x${Math.round(drawHeight)})`)
   ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
 }
 
-// Slot ratios based on original 1080x1920 Ramadan frame layout
-// These are the proportional positions of the frame's transparent "windows"
-const SLOT_RATIOS = [
-  // Row 1
-  { x: 0 / 1080, y: 245 / 1920, w: 500 / 1080, h: 420 / 1920, photoIndex: 0 },
-  { x: 580 / 1080, y: 245 / 1920, w: 500 / 1080, h: 420 / 1920, photoIndex: 0 },
-  // Row 2
-  { x: 0 / 1080, y: 680 / 1920, w: 500 / 1080, h: 420 / 1920, photoIndex: 1 },
-  { x: 580 / 1080, y: 670 / 1920, w: 500 / 1080, h: 420 / 1920, photoIndex: 1 },
-  // Row 3
-  { x: 0 / 1080, y: 1120 / 1920, w: 500 / 1080, h: 420 / 1920, photoIndex: 2 },
-  { x: 580 / 1080, y: 1120 / 1920, w: 500 / 1080, h: 420 / 1920, photoIndex: 2 },
+// Slot original untuk frame 1080x1920
+// Posisi ini cocok dengan "jendela transparan" di file FRAME 4.png dan FRAME 5.png
+const ORIGINAL_SLOTS: PhotoSlot[] = [
+  { x: 0, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
+  { x: 580, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
+  { x: 0, y: 680, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
+  { x: 580, y: 670, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
+  { x: 0, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
+  { x: 580, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
 ]
 
-/**
- * Generate slot positions dynamically based on actual frame image dimensions
- * Uses proportional ratios derived from the original 1080x1920 Ramadan frame
- */
-export function generateFrameSlots(frameWidth: number, frameHeight: number): PhotoSlot[] {
-  const cornerRadius = Math.round(30 * (frameWidth / 1080))
-
-  return SLOT_RATIOS.map(slot => ({
-    x: Math.round(slot.x * frameWidth),
-    y: Math.round(slot.y * frameHeight),
-    width: Math.round(slot.w * frameWidth),
-    height: Math.round(slot.h * frameHeight),
-    cornerRadius,
-    photoIndex: slot.photoIndex,
-  }))
-}
-
-/**
- * Legacy - kept for backward compatibility
- * Uses fixed 1080x1920 dimensions
- */
 export function generateRamadanFrameSlots(): PhotoSlot[] {
-  return generateFrameSlots(1080, 1920)
+  return ORIGINAL_SLOTS.map(s => ({ ...s }))
 }
 
 /**
- * Composite captured photos into frame template
- * Draw order: white bg → photos (clipped to rounded rects) → frame PNG on top
+ * Composite photos ke frame template
+ * Canvas selalu 1080x1920, frame di-stretch, slot original
  */
 export async function compositePhotosToFrame(options: CompositingOptions): Promise<string> {
-  const { frameImageUrl, slots, photos, outputWidth, outputHeight, filter } = options
+  const { frameImageUrl, slots, photos, filter } = options
 
-  console.log(`[compositePhotosToFrame] output=${outputWidth}x${outputHeight}, slots=${slots.length}, photos=${photos.length}`)
+  console.log(`[composite] START canvas=1080x1920 slots=${slots.length} photos=${photos.length}`)
 
   const canvas = document.createElement('canvas')
-  canvas.width = outputWidth
-  canvas.height = outputHeight
+  canvas.width = CANVAS_WIDTH
+  canvas.height = CANVAS_HEIGHT
   const ctx = canvas.getContext('2d')!
-
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
   // STEP 1: White background
   ctx.fillStyle = '#FFFFFF'
-  ctx.fillRect(0, 0, outputWidth, outputHeight)
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-  // STEP 2: Load frame image
+  // STEP 2: Load frame
+  console.log('[composite] Loading frame...')
   const frameImg = await loadImage(frameImageUrl)
+  console.log(`[composite] Frame=${frameImg.naturalWidth}x${frameImg.naturalHeight}`)
 
-  // STEP 3: Load all photos
+  // STEP 3: Load photos
   const loadedPhotos: (HTMLImageElement | null)[] = []
   for (let i = 0; i < photos.length; i++) {
-    if (photos[i]) {
+    if (photos[i] && photos[i].length > 100) {
+      console.log(`[composite] Loading photo ${i}: len=${photos[i].length}`)
       try {
         loadedPhotos[i] = await loadImage(photos[i])
       } catch (error) {
-        console.error(`[compositePhotosToFrame] Failed to load photo ${i}:`, error)
+        console.error(`[composite] Photo ${i} load failed:`, error)
         loadedPhotos[i] = null
       }
     } else {
+      console.warn(`[composite] Photo ${i} invalid (len=${photos[i]?.length})`)
       loadedPhotos[i] = null
     }
   }
 
-  console.log(`[compositePhotosToFrame] Loaded ${loadedPhotos.filter(Boolean).length}/${photos.length} photos`)
+  const loadedCount = loadedPhotos.filter(Boolean).length
+  console.log(`[composite] Photos loaded: ${loadedCount}/${photos.length}`)
 
-  // STEP 4: Draw all photos into slots with rounded clip
-  for (const slot of slots) {
+  // STEP 4: Draw photos ke slot
+  for (let si = 0; si < slots.length; si++) {
+    const slot = slots[si]
     const photo = loadedPhotos[slot.photoIndex]
-    if (!photo) continue
 
-    ctx.save()
-
-    roundedRect(ctx, slot.x, slot.y, slot.width, slot.height, slot.cornerRadius)
-    ctx.clip()
-
-    if (filter && filter !== 'none') {
-      ctx.filter = filter
+    if (!photo) {
+      console.warn(`[composite] Slot ${si}: NO PHOTO for index ${slot.photoIndex}`)
+      continue
     }
 
+    console.log(`[composite] Slot ${si}: drawing photoIndex=${slot.photoIndex} at (${slot.x},${slot.y} ${slot.width}x${slot.height})`)
+    ctx.save()
+    roundedRect(ctx, slot.x, slot.y, slot.width, slot.height, slot.cornerRadius)
+    ctx.clip()
+    if (filter && filter !== 'none') ctx.filter = filter
     drawPhotoCover(ctx, photo, slot)
-
     ctx.filter = 'none'
     ctx.restore()
   }
 
-  // STEP 5: Draw frame template on top
-  ctx.drawImage(frameImg, 0, 0, outputWidth, outputHeight)
+  // STEP 5: Frame di ATAS foto
+  console.log('[composite] Drawing frame overlay...')
+  ctx.drawImage(frameImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
   const result = canvas.toDataURL('image/jpeg', 0.95)
-  console.log(`[compositePhotosToFrame] Done, result length: ${result.length}`)
+  console.log(`[composite] DONE result len=${result.length}`)
 
   return result
 }
 
 /**
- * Smart compositing that detects frame image dimensions and computes slot positions dynamically
+ * Composite ke frame — selalu pake canvas 1080x1920
  */
 export async function compositeToFrame(
   frameImageUrl: string,
   photos: string[],
-  outputWidth?: number,
-  outputHeight?: number,
+  _outputWidth?: number,
+  _outputHeight?: number,
   filter?: string
 ): Promise<string> {
-  console.log(`[compositeToFrame] frameImageUrl=${frameImageUrl.substring(0, 60)}, photos=${photos.length}`)
+  console.log(`[compositeToFrame] frame=${frameImageUrl.substring(0, 60)} photos=${photos.length}`)
 
-  const frameImg = await loadImage(frameImageUrl)
-
-  const w = outputWidth || frameImg.naturalWidth || frameImg.width || 1080
-  const h = outputHeight || frameImg.naturalHeight || frameImg.height || 1920
-
-  console.log(`[compositeToFrame] Frame dimensions: ${frameImg.naturalWidth}x${frameImg.naturalHeight}, canvas=${w}x${h}`)
-
-  const slots = generateFrameSlots(w, h)
+  if (!photos || photos.length === 0) {
+    throw new Error('No photos to composite')
+  }
 
   return compositePhotosToFrame({
     frameImageUrl,
-    slots,
+    slots: ORIGINAL_SLOTS,
     photos,
-    outputWidth: w,
-    outputHeight: h,
+    outputWidth: CANVAS_WIDTH,
+    outputHeight: CANVAS_HEIGHT,
     filter,
   })
 }
 
-/**
- * Legacy - kept for backward compatibility
- */
+/** Legacy alias */
 export async function compositeToRamadanFrame(
   frameImageUrl: string,
   photos: string[],
-  _outputWidth: number = 1080,
-  _outputHeight: number = 1920,
+  _outputWidth?: number,
+  _outputHeight?: number,
   filter?: string
 ): Promise<string> {
   return compositeToFrame(frameImageUrl, photos, _outputWidth, _outputHeight, filter)
 }
 
 /**
- * Generate a thumbnail preview of the composite
+ * Thumbnail preview
  */
 export async function generateCompositeThumbnail(
   frameImageUrl: string,
@@ -252,44 +232,34 @@ export async function generateCompositeThumbnail(
   maxWidth: number = 400,
   filter?: string
 ): Promise<string> {
-  const frameImg = await loadImage(frameImageUrl)
-  const frameW = frameImg.naturalWidth || frameImg.width || 1080
-  const frameH = frameImg.naturalHeight || frameImg.height || 1920
-
-  const aspectRatio = frameW / frameH
+  const aspectRatio = CANVAS_WIDTH / CANVAS_HEIGHT
   const maxHeight = Math.round(maxWidth / aspectRatio)
 
-  const fullSlots = generateFrameSlots(frameW, frameH)
-  const slots = fullSlots.map(slot => ({
-    ...slot,
-    x: Math.round((slot.x / frameW) * maxWidth),
-    y: Math.round((slot.y / frameH) * maxHeight),
-    width: Math.round((slot.width / frameW) * maxWidth),
-    height: Math.round((slot.height / frameH) * maxHeight),
-    cornerRadius: Math.round((slot.cornerRadius / frameW) * maxWidth),
+  const slots = ORIGINAL_SLOTS.map(s => ({
+    ...s,
+    x: Math.round((s.x / CANVAS_WIDTH) * maxWidth),
+    y: Math.round((s.y / CANVAS_HEIGHT) * maxHeight),
+    width: Math.round((s.width / CANVAS_WIDTH) * maxWidth),
+    height: Math.round((s.height / CANVAS_HEIGHT) * maxHeight),
+    cornerRadius: Math.round((s.cornerRadius / CANVAS_WIDTH) * maxWidth),
   }))
 
   const canvas = document.createElement('canvas')
   canvas.width = maxWidth
   canvas.height = maxHeight
   const ctx = canvas.getContext('2d')!
-
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, maxWidth, maxHeight)
 
-  const frameImgThumb = await loadImage(frameImageUrl)
+  const frameImg = await loadImage(frameImageUrl)
 
   const loadedPhotos: (HTMLImageElement | null)[] = []
   for (let i = 0; i < photos.length; i++) {
     if (photos[i]) {
-      try {
-        loadedPhotos[i] = await loadImage(photos[i])
-      } catch {
-        loadedPhotos[i] = null
-      }
+      try { loadedPhotos[i] = await loadImage(photos[i]) } catch { loadedPhotos[i] = null }
     } else {
       loadedPhotos[i] = null
     }
@@ -298,21 +268,16 @@ export async function generateCompositeThumbnail(
   for (const slot of slots) {
     const photo = loadedPhotos[slot.photoIndex]
     if (!photo) continue
-
     ctx.save()
     roundedRect(ctx, slot.x, slot.y, slot.width, slot.height, slot.cornerRadius)
     ctx.clip()
-
-    if (filter && filter !== 'none') {
-      ctx.filter = filter
-    }
-
+    if (filter && filter !== 'none') ctx.filter = filter
     drawPhotoCover(ctx, photo, slot)
     ctx.filter = 'none'
     ctx.restore()
   }
 
-  ctx.drawImage(frameImgThumb, 0, 0, maxWidth, maxHeight)
+  ctx.drawImage(frameImg, 0, 0, maxWidth, maxHeight)
 
   return canvas.toDataURL('image/jpeg', 0.9)
 }

@@ -461,17 +461,21 @@ export default function BoothPage() {
       const validPhotos = session.photos.filter(p => p && (p.url || p.base64))
 
       if (validPhotos.length === 0) {
-        console.error('No valid photos to upload')
+        console.error('[upload] No valid photos to upload — store session.photos:', session.photos.length)
+        session.photos.forEach((p, i) => console.error(`[upload] photo[${i}]:`, { id: p.id, hasUrl: !!p.url, hasBase64: !!p.base64, urlPrefix: p.url?.substring(0, 30) }))
         return null
       }
 
-      console.log(`Generating composite for ${validPhotos.length} photos...`)
+      console.log(`[upload] ${validPhotos.length} valid photos, template:`, session.template?.name)
 
       const photoUrls = validPhotos.map(p => p.url || p.base64 || '').filter(Boolean)
+      console.log(`[upload] photoUrls[0] prefix: ${photoUrls[0]?.substring(0, 40)} (len=${photoUrls[0]?.length})`)
+
       let compositeBase64: string | null = null
 
       if (session.template?.imageUrl) {
         try {
+          console.log(`[upload] Composite start: frame=${session.template.imageUrl}`)
           compositeBase64 = await compositeToFrame(
             session.template.imageUrl,
             photoUrls,
@@ -481,10 +485,12 @@ export default function BoothPage() {
               ? session.selectedFilter
               : undefined
           )
-          console.log('[upload] Composite generated successfully')
+          console.log('[upload] Composite generated OK, length:', compositeBase64.length)
         } catch (error) {
-          console.error('[upload] Failed to generate composite, will upload raw photos:', error)
+          console.error('[upload] Composite failed:', error)
         }
+      } else {
+        console.error('[upload] No template.imageUrl!')
       }
 
       const uploadedUrls: string[] = []
