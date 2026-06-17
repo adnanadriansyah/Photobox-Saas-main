@@ -1,6 +1,5 @@
 // ============================================
-// Photo Compositing Utility
-// Composites captured photos into Ramadan frame template
+// Photo Compositing Utility - FIXED VERSION
 // ============================================
 
 export interface PhotoSlot {
@@ -9,44 +8,39 @@ export interface PhotoSlot {
   width: number
   height: number
   cornerRadius: number
-  photoIndex: number // Which captured photo to use (0, 1, or 2 maps to 2 slots each)
+  photoIndex: number
 }
 
 export interface CompositingOptions {
   frameImageUrl: string
   slots: PhotoSlot[]
-  photos: string[] // Base64 or URL array of captured photos
+  photos: string[]
   outputWidth: number
   outputHeight: number
-  filter?: string // CSS filter to apply to photos only (not the frame)
+  filter?: string
 }
 
-// Fixed template dimensions
 const TEMPLATE_WIDTH = 1080
 const TEMPLATE_HEIGHT = 1920
 
-/**
- * Load an image and return it as an HTMLImageElement
- */
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
+    // For base64 data URLs, no need for crossOrigin
+    if (src.startsWith('data:')) {
+      img.crossOrigin = ''
+    }
     img.src = src
   })
 }
 
-/**
- * Draw rounded rectangle path
- */
 function roundedRect(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
+  x: number, y: number,
+  width: number, height: number,
   radius: number
 ): void {
   ctx.beginPath()
@@ -62,9 +56,6 @@ function roundedRect(
   ctx.closePath()
 }
 
-/**
- * Draw photo with cover fit (crop to fill, no stretch)
- */
 function drawPhotoCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -79,13 +70,11 @@ function drawPhotoCover(
   let offsetY: number
 
   if (imgRatio > slotRatio) {
-    // Image is wider - fit by height, crop sides
     drawHeight = slot.height
     drawWidth = img.width * (drawHeight / img.height)
     offsetX = slot.x - (drawWidth - slot.width) / 2
     offsetY = slot.y
   } else {
-    // Image is taller - fit by width, crop top/bottom
     drawWidth = slot.width
     drawHeight = img.height * (drawWidth / img.width)
     offsetX = slot.x
@@ -95,105 +84,139 @@ function drawPhotoCover(
   ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
 }
 
+// ============================================
+// SLOT DEFINITIONS — per frame type
+// All values relative to 1080x1920 canvas
+// ============================================
+
 /**
- * Generate slot positions for Ramadan frame template 1080x1920
- * Uses hardcoded absolute coordinates
+ * Ramadan frame slots (original, hardcoded positions)
  */
 export function generateRamadanFrameSlots(): PhotoSlot[] {
-  const cornerRadius = 30
-
+  const cr = 30
   return [
-    // Row 1
-    { x: 0, y: 245, width: 500, height: 420, cornerRadius, photoIndex: 0 },
-    { x: 580, y: 245, width: 500, height: 420, cornerRadius, photoIndex: 0 },
-    // Row 2
-    { x: 0, y: 680, width: 500, height: 420, cornerRadius, photoIndex: 1 },
-    { x: 580, y: 670, width: 500, height: 420, cornerRadius, photoIndex: 1 },
-    // Row 3
-    { x: 0, y: 1120, width: 500, height: 420, cornerRadius, photoIndex: 2 },
-    { x: 580, y: 1120, width: 500, height: 420, cornerRadius, photoIndex: 2 }
+    { x: 0,   y: 245,  width: 500, height: 420, cornerRadius: cr, photoIndex: 0 },
+    { x: 580, y: 245,  width: 500, height: 420, cornerRadius: cr, photoIndex: 0 },
+    { x: 0,   y: 680,  width: 500, height: 420, cornerRadius: cr, photoIndex: 1 },
+    { x: 580, y: 670,  width: 500, height: 420, cornerRadius: cr, photoIndex: 1 },
+    { x: 0,   y: 1120, width: 500, height: 420, cornerRadius: cr, photoIndex: 2 },
+    { x: 580, y: 1120, width: 500, height: 420, cornerRadius: cr, photoIndex: 2 },
   ]
 }
 
 /**
- * Composite captured photos into frame template
- * Returns a data URL of the final image
+ * Generic 2x3 grid slots for new frames (beach, retro, floral, night, nature, korean)
+ * These frames follow a consistent layout:
+ *   - Header area: top ~135px (scaled from 38/450 * 1920)
+ *   - Footer area: bottom ~188px (scaled from 44/450 * 1920 - but we use 130px here)  
+ *   - Left/right padding: ~50px each side
+ *   - 2 columns, 3 rows, with ~27px gap between
  * 
- * Draw order:
- * 1. White background
- * 2. All photos clipped to rounded rectangles
- * 3. Frame template LAST (on top of photos)
+ * Preview canvas was 300x450, output is 1080x1920 → scale = 3.6×
+ * PAD=14*3.6=50, GAP=8*3.6=29, TOP=38*3.6=137, BOT=44*3.6=158
+ * colW = (1080 - 50*2 - 29) / 2 = 475.5 ≈ 475
+ * rowH = (1920 - 137 - 158 - 29*2) / 3 = 523
  */
+export function generateGenericFrameSlots(): PhotoSlot[] {
+  const PAD = 50
+  const GAP = 29
+  const TOP = 137
+  const BOT = 158
+  const cr = 30
+
+  const colW = Math.floor((TEMPLATE_WIDTH - PAD * 2 - GAP) / 2)
+  const rowH = Math.floor((TEMPLATE_HEIGHT - TOP - BOT - GAP * 2) / 3)
+
+  const slots: PhotoSlot[] = []
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 2; col++) {
+      slots.push({
+        x: PAD + col * (colW + GAP),
+        y: TOP + row * (rowH + GAP),
+        width: colW,
+        height: rowH,
+        cornerRadius: cr,
+        photoIndex: row, // row 0→photo 0, row 1→photo 1, row 2→photo 2
+      })
+    }
+  }
+  return slots
+}
+
+/**
+ * Pick the right slots based on frame URL
+ */
+function getSlotsForFrame(frameImageUrl: string): PhotoSlot[] {
+  const url = frameImageUrl.toLowerCase()
+  // Ramadan frames use the original slot layout
+  if (url.includes('frame 4') || url.includes('frame 5') || url.includes('frame4') || url.includes('frame5') || url.includes('ramad')) {
+    return generateRamadanFrameSlots()
+  }
+  // All new themed frames (beach, retro, floral, night, nature, korean)
+  return generateGenericFrameSlots()
+}
+
+// ============================================
+// Core compositor
+// ============================================
+
 export async function compositePhotosToFrame(options: CompositingOptions): Promise<string> {
-  const { frameImageUrl, slots, photos, outputWidth, outputHeight, filter } = options
-  
-  // Create canvas with fixed template size
+  const { frameImageUrl, slots, photos, filter } = options
+
   const canvas = document.createElement('canvas')
   canvas.width = TEMPLATE_WIDTH
   canvas.height = TEMPLATE_HEIGHT
   const ctx = canvas.getContext('2d')!
-  
-  // Disable blur/smoothing
+
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  
-  // STEP 1: White background
+
+  // White background
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, TEMPLATE_WIDTH, TEMPLATE_HEIGHT)
-  
-  // STEP 2: Load frame image first (we need it for dimensions)
+
+  // Load frame
   const frameImg = await loadImage(frameImageUrl)
-  
-  // STEP 3: Load all photos
+
+  // Load photos — filter out empty strings
+  const validPhotos = photos.filter(Boolean)
   const loadedPhotos: (HTMLImageElement | null)[] = []
-  for (let i = 0; i < photos.length; i++) {
-    if (photos[i]) {
-      try {
-        loadedPhotos[i] = await loadImage(photos[i])
-      } catch (error) {
-        console.error(`Failed to load photo ${i}:`, error)
-        loadedPhotos[i] = null
-      }
-    } else {
+  for (let i = 0; i < validPhotos.length; i++) {
+    try {
+      loadedPhotos[i] = await loadImage(validPhotos[i])
+    } catch (err) {
+      console.error(`Failed to load photo ${i}:`, err)
       loadedPhotos[i] = null
     }
   }
-  
-  // STEP 4: Draw all photos into slots with rounded clip
+
+  // Draw photos into slots
   for (const slot of slots) {
     const photo = loadedPhotos[slot.photoIndex]
     if (!photo) continue
-    
-    // Save context for clipping
+
     ctx.save()
-    
-    // Create rounded clip path
     roundedRect(ctx, slot.x, slot.y, slot.width, slot.height, slot.cornerRadius)
     ctx.clip()
-    
-    // Apply filter to photos only
+
     if (filter && filter !== 'none') {
       ctx.filter = filter
     }
-    
-    // Draw photo with cover fit
     drawPhotoCover(ctx, photo, slot)
-    
-    // Reset filter
     ctx.filter = 'none'
-    
     ctx.restore()
   }
-  
-  // STEP 5: Draw frame template LAST (on top of everything)
+
+  // Draw frame on top
   ctx.drawImage(frameImg, 0, 0, TEMPLATE_WIDTH, TEMPLATE_HEIGHT)
-  
+
   return canvas.toDataURL('image/jpeg', 0.95)
 }
 
-/**
- * Quick compositing with auto-generated slots for Ramadan frame
- */
+// ============================================
+// Main export — auto-detects correct slots
+// ============================================
+
 export async function compositeToRamadanFrame(
   frameImageUrl: string,
   photos: string[],
@@ -201,83 +224,83 @@ export async function compositeToRamadanFrame(
   outputHeight: number = TEMPLATE_HEIGHT,
   filter?: string
 ): Promise<string> {
-  const slots = generateRamadanFrameSlots()
-  
+  // Filter out nulls/empty
+  const validPhotos = photos.filter(Boolean)
+  if (validPhotos.length === 0) {
+    throw new Error('No valid photos to composite')
+  }
+
+  const slots = getSlotsForFrame(frameImageUrl)
+
   return compositePhotosToFrame({
     frameImageUrl,
     slots,
-    photos,
+    photos: validPhotos,
     outputWidth: TEMPLATE_WIDTH,
     outputHeight: TEMPLATE_HEIGHT,
-    filter
+    filter,
   })
 }
 
-/**
- * Generate a thumbnail preview of the composite
- */
+// ============================================
+// Thumbnail preview (same logic, smaller canvas)
+// ============================================
+
 export async function generateCompositeThumbnail(
   frameImageUrl: string,
   photos: string[],
   maxWidth: number = 400,
   filter?: string
 ): Promise<string> {
+  const validPhotos = photos.filter(Boolean)
+  if (validPhotos.length === 0) throw new Error('No valid photos')
+
   const aspectRatio = TEMPLATE_WIDTH / TEMPLATE_HEIGHT
   const maxHeight = Math.round(maxWidth / aspectRatio)
-  
-  const slots = generateRamadanFrameSlots().map(slot => ({
+  const scaleX = maxWidth / TEMPLATE_WIDTH
+  const scaleY = maxHeight / TEMPLATE_HEIGHT
+
+  const slots = getSlotsForFrame(frameImageUrl).map(slot => ({
     ...slot,
-    x: Math.round((slot.x / TEMPLATE_WIDTH) * maxWidth),
-    y: Math.round((slot.y / TEMPLATE_HEIGHT) * maxHeight),
-    width: Math.round((slot.width / TEMPLATE_WIDTH) * maxWidth),
-    height: Math.round((slot.height / TEMPLATE_HEIGHT) * maxHeight),
-    cornerRadius: Math.round((slot.cornerRadius / TEMPLATE_WIDTH) * maxWidth)
+    x: Math.round(slot.x * scaleX),
+    y: Math.round(slot.y * scaleY),
+    width: Math.round(slot.width * scaleX),
+    height: Math.round(slot.height * scaleY),
+    cornerRadius: Math.round(slot.cornerRadius * scaleX),
   }))
-  
+
   const canvas = document.createElement('canvas')
   canvas.width = maxWidth
   canvas.height = maxHeight
   const ctx = canvas.getContext('2d')!
-  
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  
+
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, maxWidth, maxHeight)
-  
+
   const frameImg = await loadImage(frameImageUrl)
-  
   const loadedPhotos: (HTMLImageElement | null)[] = []
-  for (let i = 0; i < photos.length; i++) {
-    if (photos[i]) {
-      try {
-        loadedPhotos[i] = await loadImage(photos[i])
-      } catch {
-        loadedPhotos[i] = null
-      }
-    } else {
+  for (let i = 0; i < validPhotos.length; i++) {
+    try {
+      loadedPhotos[i] = await loadImage(validPhotos[i])
+    } catch {
       loadedPhotos[i] = null
     }
   }
-  
+
   for (const slot of slots) {
     const photo = loadedPhotos[slot.photoIndex]
     if (!photo) continue
-    
     ctx.save()
     roundedRect(ctx, slot.x, slot.y, slot.width, slot.height, slot.cornerRadius)
     ctx.clip()
-    
-    if (filter && filter !== 'none') {
-      ctx.filter = filter
-    }
-    
+    if (filter && filter !== 'none') ctx.filter = filter
     drawPhotoCover(ctx, photo, slot)
     ctx.filter = 'none'
     ctx.restore()
   }
-  
+
   ctx.drawImage(frameImg, 0, 0, maxWidth, maxHeight)
-  
   return canvas.toDataURL('image/jpeg', 0.9)
 }

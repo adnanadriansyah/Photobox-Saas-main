@@ -22,7 +22,7 @@ import { compositeToRamadanFrame } from '@/lib/photo-compositor'
 import { useRouter } from 'next/navigation'
 
 // ============================================
-// Demo Templates (Ramadhan Theme)
+// Demo Templates
 // ============================================
 
 const demoTemplates: Template[] = [
@@ -130,7 +130,7 @@ const demoConfig = {
   countdownDuration: 8,
   burstCount: 3,
   gifFrames: 0,
-  sessionTimeout: 540, // 9 minutes
+  sessionTimeout: 540,
 }
 
 // ============================================
@@ -187,19 +187,16 @@ export default function BoothPage() {
   useEffect(() => {
     const handleOnline = () => setOffline(false)
     const handleOffline = () => setOffline(true)
-
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-
     setOffline(!navigator.onLine)
-
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
   }, [setOffline])
 
-  // Global Session Timer (9 minutes) - returns to payment when expired
+  // Global Session Timer
   useEffect(() => {
     if (session.sessionTimerActive && session.sessionTimer > 0) {
       timerRef.current = setInterval(() => {
@@ -208,15 +205,12 @@ export default function BoothPage() {
     } else if (session.sessionTimerActive && session.sessionTimer <= 0) {
       handleSessionTimeout()
     }
-
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
+      if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [session.sessionTimerActive, session.sessionTimer, decrementSessionTimer])
 
-  // Handle session timeout - go back to payment
+  // Handle session timeout
   const handleSessionTimeout = useCallback(() => {
     stopSessionTimer()
     setCapturedPhotos([])
@@ -235,7 +229,7 @@ export default function BoothPage() {
     }))
   }, [stopSessionTimer])
 
-  // Burst Capture Logic with 8-second countdown
+  // Burst Capture countdown ticker
   useEffect(() => {
     if (isCapturing && session.status === 'capturing') {
       if (captureCountdown > 0) {
@@ -246,38 +240,50 @@ export default function BoothPage() {
         console.log('Photo capture triggered at countdown 0')
       }
     }
-
     return () => {
-      if (captureTimerRef.current) {
-        clearTimeout(captureTimerRef.current)
-      }
+      if (captureTimerRef.current) clearTimeout(captureTimerRef.current)
     }
   }, [isCapturing, captureCountdown, session.status])
 
-  // Handle photo capture from camera
+  // ============================================
+  // FIX: handlePhotoCapture — sync ke store langsung
+  // ============================================
   const handlePhotoCapture = useCallback((photo: Photo) => {
-    const newPhotos = [...capturedPhotos]
-    const nullIndex = newPhotos.findIndex(p => p === null)
-    
-    if (nullIndex !== -1) {
-      newPhotos[nullIndex] = photo
-      const storePhotos = [...(useBoothStore.getState().session.photos || [])]
-      if (storePhotos[nullIndex]) {
-        storePhotos[nullIndex] = photo
-      }
-    } else {
-      newPhotos.push(photo)
-    }
-    
-    setCapturedPhotos(newPhotos)
+    setCapturedPhotos(prev => {
+      const newPhotos = [...prev]
+      const nullIndex = newPhotos.findIndex(p => p === null)
 
-    const validPhotoCount = newPhotos.filter(p => p).length
-    if (validPhotoCount >= 3) {
-      setIsCapturing(false)
-    } else {
-      setCaptureCountdown(8)
-    }
-  }, [capturedPhotos])
+      if (nullIndex !== -1) {
+        newPhotos[nullIndex] = photo
+      } else {
+        newPhotos.push(photo)
+      }
+
+      const validPhotos = newPhotos.filter(Boolean)
+
+      // ✅ Sync ke store langsung, tidak tunggu render berikutnya
+      useBoothStore.setState(state => ({
+        session: {
+          ...state.session,
+          photos: validPhotos,
+          currentPhotoIndex: validPhotos.length,
+        }
+      }))
+
+      return newPhotos
+    })
+
+    // Stop capturing setelah 3 foto
+    setCapturedPhotos(prev => {
+      const validCount = prev.filter(Boolean).length
+      if (validCount >= 3) {
+        setIsCapturing(false)
+      } else {
+        setCaptureCountdown(8)
+      }
+      return prev
+    })
+  }, [])
 
   // Handle payment selection
   const handlePaymentSelect = async (method: 'qris' | 'voucher' | 'event') => {
@@ -298,9 +304,7 @@ export default function BoothPage() {
             customerPhone: session.customerPhone,
           }),
         })
-
         const data = await response.json()
-
         if (data.success) {
           setQrisString(data.qrString, new Date(data.expiresAt), data.transactionRef)
           setTransactionRef(data.transactionRef)
@@ -322,13 +326,11 @@ export default function BoothPage() {
     }
   }
 
-  // Payment polling for QRIS
   const startPaymentPolling = (transactionRef: string) => {
     const pollInterval = setInterval(async () => {
       try {
         const response = await fetch(`/api/payment/status?ref=${transactionRef}`)
         const data = await response.json()
-
         if (data.status === 'success') {
           clearInterval(pollInterval)
           setPaymentStatus('paid')
@@ -346,7 +348,6 @@ export default function BoothPage() {
         console.error('Payment polling error:', error)
       }
     }, 3000)
-
     setTimeout(() => {
       clearInterval(pollInterval)
       setQrisPolling(false)
@@ -395,36 +396,59 @@ export default function BoothPage() {
   }
 
   const handleRetakePhoto = (index: number) => {
-    const newPhotos = [...capturedPhotos]
-    newPhotos[index] = null as unknown as Photo
-    setCapturedPhotos(newPhotos)
-    
-    useBoothStore.setState((state) => ({
-      session: {
-        ...state.session,
-        photos: newPhotos,
-      },
-    }))
+    setCapturedPhotos(prev => {
+      const newPhotos = [...prev]
+      newPhotos[index] = null as unknown as Photo
+
+      const validPhotos = newPhotos.filter(Boolean)
+      useBoothStore.setState(state => ({
+        session: {
+          ...state.session,
+          photos: validPhotos,
+          currentPhotoIndex: validPhotos.length,
+        }
+      }))
+
+      return newPhotos
+    })
   }
 
+  // ============================================
+  // FIX: handleFinishCapture — baca dari store, bukan closure stale
+  // ============================================
   const handleFinishCapture = () => {
-    const validPhotos = capturedPhotos.filter(p => p)
-    
-    useBoothStore.setState((state) => ({
-      session: {
-        ...state.session,
-        photos: validPhotos,
-        currentPhotoIndex: validPhotos.length,
-      },
-    }))
-    
+    // Baca langsung dari store yang sudah disync oleh handlePhotoCapture
+    const currentPhotos = useBoothStore.getState().session.photos.filter(p => p)
+
+    if (currentPhotos.length === 0) {
+      console.error('No photos to finish with — capturedPhotos may not have synced yet')
+      // Fallback: coba dari local state
+      const fallback = capturedPhotos.filter(p => p)
+      if (fallback.length === 0) return
+
+      useBoothStore.setState(state => ({
+        session: {
+          ...state.session,
+          photos: fallback,
+          currentPhotoIndex: fallback.length,
+        }
+      }))
+    } else {
+      useBoothStore.setState(state => ({
+        session: {
+          ...state.session,
+          photos: currentPhotos,
+          currentPhotoIndex: currentPhotos.length,
+        }
+      }))
+    }
+
     setProcessing()
     setTimeout(() => setPreview(), 2000)
   }
 
   // ============================================
-  // Upload Photos and Complete Session
-  // Generate composite (foto + frame) dulu, baru upload
+  // Upload & Complete Session
   // ============================================
   const uploadPhotosAndComplete = async () => {
     try {
@@ -432,12 +456,11 @@ export default function BoothPage() {
 
       if (validPhotos.length === 0) {
         console.error('No valid photos to upload')
-        return
+        return null
       }
 
-      console.log('Generating composite and uploading...')
+      console.log(`Generating composite for ${validPhotos.length} photos...`)
 
-      // STEP 1: Generate composite (foto + frame + filter)
       const photoUrls = validPhotos.map(p => p.url || p.base64 || '').filter(Boolean)
       let compositeBase64: string | null = null
 
@@ -454,33 +477,26 @@ export default function BoothPage() {
           )
           console.log('Composite generated successfully')
         } catch (error) {
-          console.error('Failed to generate composite, uploading raw photos instead:', error)
+          console.error('Failed to generate composite, will upload raw photos:', error)
         }
       }
 
-      // STEP 2: Upload composite atau raw photos sebagai fallback
       const uploadedUrls: string[] = []
 
       if (compositeBase64) {
-        // Upload composite sebagai satu file
         try {
           const base64Data = compositeBase64.split(',')[1]
           const byteCharacters = atob(base64Data)
-          const byteNumbers = new Array(byteCharacters.length)
+          const byteArray = new Uint8Array(byteCharacters.length)
           for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i)
+            byteArray[i] = byteCharacters.charCodeAt(i)
           }
-          const byteArray = new Uint8Array(byteNumbers)
           const blob = new Blob([byteArray], { type: 'image/jpeg' })
-
           const formData = new FormData()
           formData.append('photo', blob, `composite-${Date.now()}.jpg`)
           formData.append('machineId', demoConfig.machineId)
 
-          const uploadResponse = await fetch('/api/photos/upload', {
-            method: 'POST',
-            body: formData,
-          })
+          const uploadResponse = await fetch('/api/photos/upload', { method: 'POST', body: formData })
           const uploadResult = await uploadResponse.json()
 
           if (uploadResult.success) {
@@ -494,20 +510,14 @@ export default function BoothPage() {
         }
       }
 
-      // Fallback: upload raw photos kalau composite gagal
+      // Fallback: upload raw photos
       if (uploadedUrls.length === 0) {
         for (const photo of validPhotos) {
           try {
             let blob: Blob
-
             if (photo.base64 && photo.base64.startsWith('data:')) {
               const base64Data = photo.base64.split(',')[1]
-              const byteCharacters = atob(base64Data)
-              const byteNumbers = new Array(byteCharacters.length)
-              for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i)
-              }
-              const byteArray = new Uint8Array(byteNumbers)
+              const byteArray = new Uint8Array(atob(base64Data).split('').map(c => c.charCodeAt(0)))
               blob = new Blob([byteArray], { type: 'image/jpeg' })
             } else if (photo.url) {
               const response = await fetch(photo.url)
@@ -520,15 +530,11 @@ export default function BoothPage() {
             formData.append('photo', blob, `photo-${Date.now()}.jpg`)
             formData.append('machineId', demoConfig.machineId)
 
-            const uploadResponse = await fetch('/api/photos/upload', {
-              method: 'POST',
-              body: formData,
-            })
+            const uploadResponse = await fetch('/api/photos/upload', { method: 'POST', body: formData })
             const uploadResult = await uploadResponse.json()
 
             if (uploadResult.success) {
               uploadedUrls.push(uploadResult.url)
-              console.log('Photo uploaded:', uploadResult.url)
             } else {
               console.error('Upload failed:', uploadResult.error)
             }
@@ -540,29 +546,24 @@ export default function BoothPage() {
 
       if (uploadedUrls.length === 0) {
         console.error('No photos were successfully uploaded')
-        return
+        return null
       }
 
-      // STEP 3: Create session di database
+      // Create session in DB
       const sessionResponse = await fetch('/api/sessions/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          machineId: demoConfig.machineId,
-          // frameId tidak dikirim karena demoTemplates pakai ID custom, bukan dari DB
-        }),
+        body: JSON.stringify({ machineId: demoConfig.machineId }),
       })
-
       const sessionData = await sessionResponse.json()
 
       if (!sessionData.success) {
         console.error('Failed to create session:', sessionData.error)
-        return
+        return null
       }
 
       const { sessionId, galleryCode } = sessionData.data
 
-      // STEP 4: Update session dengan URL foto
       const updateResponse = await fetch(`/api/sessions/${sessionId}/photos`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -573,7 +574,6 @@ export default function BoothPage() {
           totalPrice: demoConfig.defaultPrice,
         }),
       })
-
       const updateResult = await updateResponse.json()
 
       if (updateResult.success) {
@@ -583,7 +583,6 @@ export default function BoothPage() {
         console.error('Failed to update session:', updateResult.error)
         return null
       }
-
     } catch (error) {
       console.error('Error in uploadPhotosAndComplete:', error)
       return null
@@ -611,47 +610,34 @@ export default function BoothPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageBase64: compositeUrl,
-            copies: session.printCopies || 1
-          })
+            copies: session.printCopies || 1,
+          }),
         })
-
         const result = await response.json()
-
         if (result.success) {
           console.log('Print sent successfully:', result.message)
         } else {
           console.error('Print failed:', result.error)
         }
-
-        setTimeout(async () => {
-          const galleryCode = await uploadPhotosAndComplete()
-
-          if (galleryCode) {
-            setCompleted(galleryCode)
-
-            if (session.customerPhone) {
-              sendGalleryNotification({
-                phoneNumber: session.customerPhone,
-                outletName: demoConfig.outletName,
-                galleryCode,
-                galleryUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/gallery?code=${galleryCode}`,
-                photoCount: session.photos.length,
-              })
-            }
-          } else {
-            console.error('Failed to upload photos and complete session')
-            const fallbackCode = generateGalleryCode()
-            setCompleted(fallbackCode)
-          }
-        }, 1500)
-
       } catch (error) {
         console.error('Print error:', error)
-        setTimeout(async () => {
-          const galleryCode = await uploadPhotosAndComplete() || generateGalleryCode()
-          setCompleted(galleryCode)
-        }, 2000)
       }
+
+      setTimeout(async () => {
+        const galleryCode = await uploadPhotosAndComplete()
+        const finalCode = galleryCode || generateGalleryCode()
+        setCompleted(finalCode)
+
+        if (session.customerPhone) {
+          sendGalleryNotification({
+            phoneNumber: session.customerPhone,
+            outletName: demoConfig.outletName,
+            galleryCode: finalCode,
+            galleryUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/gallery?code=${finalCode}`,
+            photoCount: session.photos.length,
+          })
+        }
+      }, 1500)
     }
   }
 
@@ -663,13 +649,8 @@ export default function BoothPage() {
     if (session.printCopies > 1) {
       setShowAdditionalPayment(true)
     } else {
-      handlePrintAndComplete()
+      handlePrint()
     }
-  }
-
-  const handlePrintAndComplete = () => {
-    setShowPrintUpsell(false)
-    handlePrint()
   }
 
   const handleAdditionalPaymentComplete = () => {
@@ -678,30 +659,21 @@ export default function BoothPage() {
     handlePrint()
   }
 
-  const proceedWithPrinting = () => {
-    handlePrint()
-  }
-
   const handlePrintCancel = async () => {
     setShowPrintUpsell(false)
     setShowAdditionalPayment(false)
     const galleryCode = await uploadPhotosAndComplete()
+    const finalCode = galleryCode || generateGalleryCode()
+    setCompleted(finalCode)
 
-    if (galleryCode) {
-      setCompleted(galleryCode)
-
-      if (session.customerPhone) {
-        sendGalleryNotification({
-          phoneNumber: session.customerPhone,
-          outletName: demoConfig.outletName,
-          galleryCode,
-          galleryUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/gallery?code=${galleryCode}`,
-          photoCount: session.photos.length,
-        })
-      }
-    } else {
-      const fallbackCode = generateGalleryCode()
-      setCompleted(fallbackCode)
+    if (session.customerPhone) {
+      sendGalleryNotification({
+        phoneNumber: session.customerPhone,
+        outletName: demoConfig.outletName,
+        galleryCode: finalCode,
+        galleryUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/gallery?code=${finalCode}`,
+        photoCount: session.photos.length,
+      })
     }
   }
 
@@ -785,12 +757,8 @@ export default function BoothPage() {
           photos={session.photos}
           template={session.template}
           onRetake={handleRetake}
-          onPrint={() => {
-            setShowPrintUpsell(true)
-          }}
-          onContinue={() => {
-            setShowPrintUpsell(true)
-          }}
+          onPrint={() => setShowPrintUpsell(true)}
+          onContinue={() => setShowPrintUpsell(true)}
         />
       )}
 
