@@ -18,7 +18,7 @@ import {
   ProcessingScreen,
 } from '@/components/booth/BoothComponents'
 import { sendGalleryNotification } from '@/lib/whatsapp-service'
-import { compositeToRamadanFrame } from '@/lib/photo-compositor'
+import { compositeToFrame } from '@/lib/photo-compositor'
 import { useRouter } from 'next/navigation'
 
 // ============================================
@@ -246,9 +246,11 @@ export default function BoothPage() {
   }, [isCapturing, captureCountdown, session.status])
 
   // ============================================
-  // FIX: handlePhotoCapture — sync ke store langsung
+  // handlePhotoCapture — single state update + store sync
   // ============================================
   const handlePhotoCapture = useCallback((photo: Photo) => {
+    console.log(`[handlePhotoCapture] Photo captured: ${photo.id.substring(0, 8)}`)
+
     setCapturedPhotos(prev => {
       const newPhotos = [...prev]
       const nullIndex = newPhotos.findIndex(p => p === null)
@@ -260,8 +262,9 @@ export default function BoothPage() {
       }
 
       const validPhotos = newPhotos.filter(Boolean)
+      console.log(`[handlePhotoCapture] Valid: ${validPhotos.length}/3`)
 
-      // ✅ Sync ke store langsung, tidak tunggu render berikutnya
+      // Sync ke Zustand store langsung
       useBoothStore.setState(state => ({
         session: {
           ...state.session,
@@ -273,16 +276,19 @@ export default function BoothPage() {
       return newPhotos
     })
 
-    // Stop capturing setelah 3 foto
-    setCapturedPhotos(prev => {
-      const validCount = prev.filter(Boolean).length
-      if (validCount >= 3) {
-        setIsCapturing(false)
-      } else {
-        setCaptureCountdown(8)
-      }
-      return prev
-    })
+    // Baca latest capturedPhotos untuk cek count (pakai setTimeout biar state update selesai)
+    setTimeout(() => {
+      setCapturedPhotos(prev => {
+        const count = prev.filter(Boolean).length
+        if (count >= 3) {
+          console.log('[handlePhotoCapture] All 3 photos done, stopping capture')
+          setIsCapturing(false)
+        } else {
+          setCaptureCountdown(demoConfig.countdownDuration)
+        }
+        return prev
+      })
+    }, 0)
   }, [])
 
   // Handle payment selection
@@ -414,34 +420,34 @@ export default function BoothPage() {
   }
 
   // ============================================
-  // FIX: handleFinishCapture — baca dari store, bukan closure stale
+  // handleFinishCapture — baca dari store, fallback ke local state
   // ============================================
   const handleFinishCapture = () => {
-    // Baca langsung dari store yang sudah disync oleh handlePhotoCapture
-    const currentPhotos = useBoothStore.getState().session.photos.filter(p => p)
+    console.log('[handleFinishCapture] Called')
 
-    if (currentPhotos.length === 0) {
-      console.error('No photos to finish with — capturedPhotos may not have synced yet')
-      // Fallback: coba dari local state
-      const fallback = capturedPhotos.filter(p => p)
-      if (fallback.length === 0) return
+    // Baca dari Zustand store (di-sync oleh handlePhotoCapture)
+    let photosForProcessing = useBoothStore.getState().session.photos.filter(p => p)
 
-      useBoothStore.setState(state => ({
-        session: {
-          ...state.session,
-          photos: fallback,
-          currentPhotoIndex: fallback.length,
-        }
-      }))
-    } else {
-      useBoothStore.setState(state => ({
-        session: {
-          ...state.session,
-          photos: currentPhotos,
-          currentPhotoIndex: currentPhotos.length,
-        }
-      }))
+    if (photosForProcessing.length === 0) {
+      console.warn('[handleFinishCapture] Store empty, trying local capturedPhotos')
+      photosForProcessing = capturedPhotos.filter(p => p)
     }
+
+    if (photosForProcessing.length === 0) {
+      console.error('[handleFinishCapture] No photos available anywhere!')
+      return
+    }
+
+    console.log(`[handleFinishCapture] ${photosForProcessing.length} photos ready`)
+
+    // Sync final state ke store
+    useBoothStore.setState(state => ({
+      session: {
+        ...state.session,
+        photos: photosForProcessing,
+        currentPhotoIndex: photosForProcessing.length,
+      }
+    }))
 
     setProcessing()
     setTimeout(() => setPreview(), 2000)
@@ -466,18 +472,18 @@ export default function BoothPage() {
 
       if (session.template?.imageUrl) {
         try {
-          compositeBase64 = await compositeToRamadanFrame(
+          compositeBase64 = await compositeToFrame(
             session.template.imageUrl,
             photoUrls,
-            1080,
-            1920,
+            undefined,
+            undefined,
             session.selectedFilter && session.selectedFilter !== 'none'
               ? session.selectedFilter
               : undefined
           )
-          console.log('Composite generated successfully')
+          console.log('[upload] Composite generated successfully')
         } catch (error) {
-          console.error('Failed to generate composite, will upload raw photos:', error)
+          console.error('[upload] Failed to generate composite, will upload raw photos:', error)
         }
       }
 
@@ -597,11 +603,11 @@ export default function BoothPage() {
 
       try {
         const photoUrls = session.photos.map(p => p.url || p.base64 || '').filter(Boolean)
-        const compositeUrl = await compositeToRamadanFrame(
+        const compositeUrl = await compositeToFrame(
           session.template.imageUrl,
           photoUrls,
-          1080,
-          1920,
+          undefined,
+          undefined,
           session.selectedFilter && session.selectedFilter !== 'none' ? session.selectedFilter : undefined
         )
 

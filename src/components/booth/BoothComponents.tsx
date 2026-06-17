@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, Sparkles, CreditCard, Download, Share2, Printer, RefreshCw, Clock, Wifi, WifiOff, ChevronLeft, ChevronRight, Phone, Timer, Check, X, Plus, Minus } from 'lucide-react'
 import { useBoothStore, usePaymentStore, type Photo, type Template } from '@/lib/stores/booth-store'
-import { compositeToRamadanFrame, generateCompositeThumbnail } from '@/lib/photo-compositor'
+import { compositeToFrame, generateCompositeThumbnail } from '@/lib/photo-compositor'
 
 // ============================================
 // Session Timer Component
@@ -623,33 +623,23 @@ export function BoothLayout({
   const [captureTrigger, setCaptureTrigger] = useState(0)
   const [showCountdownOverlay, setShowCountdownOverlay] = useState(false)
   const [currentCountdown, setCurrentCountdown] = useState(8)
-  const captureTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const prevIsCountdownRef = useRef(isCountdown)
 
-  // Handle countdown for each photo
+  // Detect countdown transition: when isCountdown goes true→false and countdown=0, trigger capture
   useEffect(() => {
+    const wasCounting = prevIsCountdownRef.current
+    prevIsCountdownRef.current = isCountdown
+
+    if (wasCounting && !isCountdown && countdownValue === 0) {
+      console.log('[BoothLayout] Countdown finished → triggering capture')
+      setCaptureTrigger(Date.now())
+    }
+
     if (isCountdown && countdownValue > 0) {
       setShowCountdownOverlay(true)
       setCurrentCountdown(countdownValue)
-      
-      captureTimerRef.current = setTimeout(() => {
-        // Capture the photo
-        setCaptureTrigger(Date.now())
-      }, countdownValue * 1000)
-    } else if (!isCountdown) {
+    } else {
       setShowCountdownOverlay(false)
-    }
-
-    return () => {
-      if (captureTimerRef.current) {
-        clearTimeout(captureTimerRef.current)
-      }
-    }
-  }, [isCountdown, countdownValue])
-
-  // Show current countdown value
-  useEffect(() => {
-    if (isCountdown) {
-      setCurrentCountdown(countdownValue)
     }
   }, [isCountdown, countdownValue])
 
@@ -896,12 +886,12 @@ export function PhotoPreview({ photos, template, onRetake, onPrint, onContinue }
     setIsGenerating(true)
     try {
       const photoUrls = photos.map(p => p.url || p.base64 || '').filter(Boolean)
-      // Pass filter to compositor so it applies to photos only (not frame)
-      const result = await compositeToRamadanFrame(
-        template.imageUrl, 
-        photoUrls, 
-        1080, 
-        1920,
+      console.log(`[PhotoPreview] Generating composite: ${photoUrls.length} photos, filter=${selectedFilter}`)
+      const result = await compositeToFrame(
+        template.imageUrl,
+        photoUrls,
+        undefined,
+        undefined,
         selectedFilter !== 'none' ? selectedFilter : undefined
       )
       setCompositeImage(result)
