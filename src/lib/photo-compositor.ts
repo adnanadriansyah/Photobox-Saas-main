@@ -76,6 +76,118 @@ export function generateGenericFrameSlots(): PhotoSlot[] {
   return slots
 }
 
+// ============================================
+// Auto-detect slot positions from frame PNG
+// ============================================
+
+export async function detectFrameSlots(
+  frameImageUrl: string
+): Promise<PhotoSlot[]> {
+  // Load frame as blob (avoid CORS taint)
+  const res = await fetch(frameImageUrl)
+  const blob = await res.blob()
+  const blobUrl = URL.createObjectURL(blob)
+
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const W = img.width   // 1200
+      const H = img.height  // 1800
+
+      const canvas = document.createElement('canvas')
+      canvas.width = W
+      canvas.height = H
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0)
+
+      // Scan setiap piksel untuk cari area putih/transparan (slot foto)
+      // Area slot = piksel dengan alpha < 50 ATAU warna mendekati putih
+      // Scan horizontal dan vertikal untuk deteksi batas slot
+
+      const imageData = ctx.getImageData(0, 0, W, H)
+      const data = imageData.data
+
+      // Cari baris yang dominan transparan/putih (batas atas/bawah slot)
+      const isSlotPixel = (x: number, y: number): boolean => {
+        const i = (y * W + x) * 4
+        const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3]
+        // Transparan = slot
+        if (a < 100) return true
+        // Putih/terang = slot
+        if (r > 200 && g > 200 && b > 200) return true
+        return false
+      }
+
+      // Sample di 4 titik horizontal untuk tiap baris
+      // Kalau semua 4 titik adalah slot pixel = baris ini bagian dari slot
+      const slotRows: boolean[] = []
+      for (let y = 0; y < H; y++) {
+        const checks = [W*0.25, W*0.35, W*0.65, W*0.75].map(
+          x => isSlotPixel(Math.floor(x), y)
+        )
+        slotRows[y] = checks.every(c => c)
+      }
+
+      // Temukan range baris untuk setiap slot row (ada 3 slot row)
+      const rowRanges: {start: number, end: number}[] = []
+      let inSlot = false, start = 0
+      for (let y = 0; y < H; y++) {
+        if (slotRows[y] && !inSlot) { inSlot = true; start = y }
+        if (!slotRows[y] && inSlot) {
+          inSlot = false
+          if (y - start > 50) rowRanges.push({start, end: y})
+        }
+      }
+
+      // Sama untuk kolom (ada 2 kolom)
+      const slotCols: boolean[] = []
+      for (let x = 0; x < W; x++) {
+        const midY = Math.floor(H * 0.5)
+        slotCols[x] = isSlotPixel(x, midY)
+      }
+      const colRanges: {start: number, end: number}[] = []
+      let inCol = false, colStart = 0
+      for (let x = 0; x < W; x++) {
+        if (slotCols[x] && !inCol) { inCol = true; colStart = x }
+        if (!slotCols[x] && inCol) {
+          inCol = false
+          if (x - colStart > 50) colRanges.push({start: colStart, end: x})
+        }
+      }
+
+      URL.revokeObjectURL(blobUrl)
+
+      // Fallback ke koordinat manual kalau deteksi gagal
+      if (rowRanges.length < 3 || colRanges.length < 2) {
+        console.warn('[detectFrameSlots] Auto-detect failed, using manual coords')
+        resolve(generateGenericFrameSlots())
+        return
+      }
+
+      // Build slots dari detected ranges
+      const slots: PhotoSlot[] = []
+      for (let row = 0; row < Math.min(rowRanges.length, 3); row++) {
+        for (let col = 0; col < Math.min(colRanges.length, 2); col++) {
+          slots.push({
+            x: colRanges[col].start + 5,
+            y: rowRanges[row].start + 5,
+            width: colRanges[col].end - colRanges[col].start - 10,
+            height: rowRanges[row].end - rowRanges[row].start - 10,
+            cornerRadius: 20,
+            photoIndex: row,
+          })
+        }
+      }
+
+      console.log('[detectFrameSlots] Detected slots:',
+        slots.map(s => `[${s.photoIndex}] ${s.x},${s.y} ${s.width}x${s.height}`).join(' | ')
+      )
+      resolve(slots)
+    }
+    img.src = blobUrl
+  })
+}
+
 function getDimensionsForFrame(frameImageUrl: string) {
   const url = frameImageUrl.toLowerCase()
   if (url.includes('frame 4') || url.includes('frame 5') ||
@@ -166,13 +278,11 @@ function drawPhotoCover(
   let offsetY: number
 
   if (imgRatio > slotRatio) {
-    // Photo lebih lebar dari slot → fit by height, crop horizontal
     drawHeight = slot.height
     drawWidth = img.naturalWidth * (drawHeight / img.naturalHeight)
     offsetX = slot.x - (drawWidth - slot.width) / 2
     offsetY = slot.y
   } else {
-    // Photo lebih tinggi dari slot → fit by width, crop vertikal
     drawWidth = slot.width
     drawHeight = img.naturalHeight * (drawWidth / img.naturalWidth)
     offsetX = slot.x
@@ -290,20 +400,30 @@ export async function compositeToFrame(
     throw new Error('No photos to composite')
   }
 
-  // Deteksi tipe frame dari URL
-  const dims = getDimensionsForFrame(frameImageUrl)
-  const useGeneric = dims.width === 1200
+  const validPhotos = photos.filter(Boolean)
+
+  const url = frameImageUrl.toLowerCase()
+  const isRamadan = url.includes('frame 4') || url.includes('frame 5') ||
+                    url.includes('frame4') || url.includes('frame5') ||
+                    url.includes('ramad')
+
+  const dims = isRamadan
+    ? { width: 1080, height: 1920 }
+    : { width: 1200, height: 1800 }
+
+  const slots = isRamadan
+    ? generateRamadanFrameSlots()
+    : await detectFrameSlots(frameImageUrl)
 
   const outputWidth = _outputWidth || dims.width
   const outputHeight = _outputHeight || dims.height
-  const slots = useGeneric ? generateGenericFrameSlots() : RAMADAN_SLOTS
 
-  console.log(`[compositeToFrame] detected: ${dims.width}x${dims.height}`)
+  console.log(`[compositeToFrame] detected: ${dims.width}x${dims.height} slots=${slots.length}`)
 
   return compositePhotosToFrame({
     frameImageUrl,
     slots,
-    photos,
+    photos: validPhotos,
     outputWidth,
     outputHeight,
     filter,
@@ -330,11 +450,21 @@ export async function generateCompositeThumbnail(
   maxWidth: number = 400,
   filter?: string
 ): Promise<string> {
-  const dims = getDimensionsForFrame(frameImageUrl)
+  const url = frameImageUrl.toLowerCase()
+  const isRamadan = url.includes('frame 4') || url.includes('frame 5') ||
+                    url.includes('frame4') || url.includes('frame5') ||
+                    url.includes('ramad')
+
+  const dims = isRamadan
+    ? { width: 1080, height: 1920 }
+    : { width: 1200, height: 1800 }
+
   const canvasW = dims.width
   const canvasH = dims.height
-  const useGeneric = dims.width === 1200
-  const slots = useGeneric ? generateGenericFrameSlots() : RAMADAN_SLOTS
+
+  const slots = isRamadan
+    ? generateRamadanFrameSlots()
+    : await detectFrameSlots(frameImageUrl)
 
   const aspectRatio = canvasW / canvasH
   const maxHeight = Math.round(maxWidth / aspectRatio)
