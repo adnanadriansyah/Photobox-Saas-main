@@ -1,7 +1,7 @@
 // ============================================
 // Photo Compositing Utility
-// Canvas selalu 1080x1920, frame di-stretch ke ukuran itu
-// Slot menggunakan koordinat original (hardcoded untuk 1080x1920)
+// Canvas sesuai dimensi frame (1080x1920 untuk FRAME 4/5, 1200x1800 untuk Korean dll)
+// Slot menggunakan koordinat yang sesuai dengan canvas size
 // ============================================
 
 export interface PhotoSlot {
@@ -22,23 +22,79 @@ export interface CompositingOptions {
   filter?: string
 }
 
-const CANVAS_WIDTH = 1080
-const CANVAS_HEIGHT = 1920
+// ============================================
+// Slot definitions
+// ============================================
+
+// Slot original untuk frame Ramadan (FRAME 4.png, FRAME 5.png) — 1080x1920
+const RAMADAN_SLOTS: PhotoSlot[] = [
+  { x: 0, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
+  { x: 580, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
+  { x: 0, y: 680, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
+  { x: 580, y: 670, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
+  { x: 0, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
+  { x: 580, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
+]
+
+// Slot untuk frame 1200x1800 (Korean, Nature, Night, Floral, Beach, Retro, dll)
+// Scale 4x dari preview 300x450
+// PAD=56, GAP=32, TOP=152, BOT=176
+// colW = (1200 - 56*2 - 32) / 2 = 528
+// rowH = (1800 - 152 - 176 - 32*2) / 3 = 469
+const KOREAN_SLOTS: PhotoSlot[] = [
+  // Row 0
+  { x: 56, y: 152, width: 528, height: 469, cornerRadius: 30, photoIndex: 0 },
+  { x: 616, y: 152, width: 528, height: 469, cornerRadius: 30, photoIndex: 0 },
+  // Row 1
+  { x: 56, y: 653, width: 528, height: 469, cornerRadius: 30, photoIndex: 1 },
+  { x: 616, y: 653, width: 528, height: 469, cornerRadius: 30, photoIndex: 1 },
+  // Row 2
+  { x: 56, y: 1154, width: 528, height: 469, cornerRadius: 30, photoIndex: 2 },
+  { x: 616, y: 1154, width: 528, height: 469, cornerRadius: 30, photoIndex: 2 },
+]
+
+export function generateRamadanFrameSlots(): PhotoSlot[] {
+  return RAMADAN_SLOTS.map(s => ({ ...s }))
+}
+
+// ============================================
+// CORS-safe image loader
+// ============================================
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    if (!src.startsWith('data:')) {
+  return new Promise(async (resolve, reject) => {
+    // base64 → load langsung tanpa crossOrigin
+    if (src.startsWith('data:')) {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error(`Failed to load base64 image`))
+      img.src = src
+      return
+    }
+
+    // URL server → fetch as blob dulu (bypass CORS)
+    try {
+      const res = await fetch(src)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const img = new Image()
+      img.onload = () => { URL.revokeObjectURL(blobUrl); resolve(img) }
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error(`Failed to load image blob: ${src.substring(0, 60)}`)) }
+      img.src = blobUrl
+    } catch {
+      // fallback: crossOrigin (kalau server support CORS)
+      const img = new Image()
       img.crossOrigin = 'anonymous'
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error(`Failed to load image: ${src.substring(0, 80)}`))
+      img.src = src
     }
-    img.onload = () => {
-      console.log(`[loadImage] OK ${src.substring(0, 40)}... (${img.naturalWidth}x${img.naturalHeight})`)
-      resolve(img)
-    }
-    img.onerror = () => reject(new Error(`Failed to load image: ${src.substring(0, 80)}`))
-    img.src = src
   })
 }
+
+// ============================================
+// Canvas drawing helpers
+// ============================================
 
 function roundedRect(
   ctx: CanvasRenderingContext2D,
@@ -92,44 +148,32 @@ function drawPhotoCover(
     offsetY = slot.y - (drawHeight - slot.height) / 2
   }
 
-  console.log(`  [drawPhoto] slot=(${slot.x},${slot.y} ${slot.width}x${slot.height}) img=${img.naturalWidth}x${img.naturalHeight} draw=(${Math.round(offsetX)},${Math.round(offsetY)} ${Math.round(drawWidth)}x${Math.round(drawHeight)})`)
   ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
 }
 
-// Slot original untuk frame 1080x1920
-// Posisi ini cocok dengan "jendela transparan" di file FRAME 4.png dan FRAME 5.png
-const ORIGINAL_SLOTS: PhotoSlot[] = [
-  { x: 0, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
-  { x: 580, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
-  { x: 0, y: 680, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
-  { x: 580, y: 670, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
-  { x: 0, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
-  { x: 580, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
-]
-
-export function generateRamadanFrameSlots(): PhotoSlot[] {
-  return ORIGINAL_SLOTS.map(s => ({ ...s }))
-}
+// ============================================
+// Main composite function
+// ============================================
 
 /**
  * Composite photos ke frame template
- * Canvas selalu 1080x1920, frame di-stretch, slot original
+ * Canvas menggunakan dimensi dari options (outputWidth x outputHeight)
  */
 export async function compositePhotosToFrame(options: CompositingOptions): Promise<string> {
-  const { frameImageUrl, slots, photos, filter } = options
+  const { frameImageUrl, slots, photos, outputWidth, outputHeight, filter } = options
 
-  console.log(`[composite] START canvas=1080x1920 slots=${slots.length} photos=${photos.length}`)
+  console.log(`[composite] START canvas=${outputWidth}x${outputHeight} slots=${slots.length} photos=${photos.length}`)
 
   const canvas = document.createElement('canvas')
-  canvas.width = CANVAS_WIDTH
-  canvas.height = CANVAS_HEIGHT
+  canvas.width = outputWidth
+  canvas.height = outputHeight
   const ctx = canvas.getContext('2d')!
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
   // STEP 1: White background
   ctx.fillStyle = '#FFFFFF'
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+  ctx.fillRect(0, 0, outputWidth, outputHeight)
 
   // STEP 2: Load frame
   console.log('[composite] Loading frame...')
@@ -178,16 +222,25 @@ export async function compositePhotosToFrame(options: CompositingOptions): Promi
 
   // STEP 5: Frame di ATAS foto
   console.log('[composite] Drawing frame overlay...')
-  ctx.drawImage(frameImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+  ctx.drawImage(frameImg, 0, 0, outputWidth, outputHeight)
 
-  const result = canvas.toDataURL('image/jpeg', 0.95)
+  const result = canvas.toDataURL('image/jpeg', 0.92)
   console.log(`[composite] DONE result len=${result.length}`)
+
+  // Validasi: canvas tainted akan menghasilkan dataURL terlalu kecil
+  if (result.length < 50000) {
+    throw new Error(`Canvas tainted — result too small (${result.length} bytes)`)
+  }
 
   return result
 }
 
+// ============================================
+// Public API
+// ============================================
+
 /**
- * Composite ke frame — selalu pake canvas 1080x1920
+ * Composite ke frame — otomatis deteksi ukuran frame dari URL
  */
 export async function compositeToFrame(
   frameImageUrl: string,
@@ -202,12 +255,21 @@ export async function compositeToFrame(
     throw new Error('No photos to composite')
   }
 
+  // Deteksi tipe frame dari URL
+  const isKoreanStyle = frameImageUrl.includes('1200x1800')
+
+  const outputWidth = _outputWidth || (isKoreanStyle ? 1200 : 1080)
+  const outputHeight = _outputHeight || (isKoreanStyle ? 1800 : 1920)
+  const slots = isKoreanStyle ? KOREAN_SLOTS : RAMADAN_SLOTS
+
+  console.log(`[compositeToFrame] detected: ${isKoreanStyle ? '1200x1800 (Korean style)' : '1080x1920 (Ramadan)'}`)
+
   return compositePhotosToFrame({
     frameImageUrl,
-    slots: ORIGINAL_SLOTS,
+    slots,
     photos,
-    outputWidth: CANVAS_WIDTH,
-    outputHeight: CANVAS_HEIGHT,
+    outputWidth,
+    outputHeight,
     filter,
   })
 }
@@ -232,16 +294,21 @@ export async function generateCompositeThumbnail(
   maxWidth: number = 400,
   filter?: string
 ): Promise<string> {
-  const aspectRatio = CANVAS_WIDTH / CANVAS_HEIGHT
+  const isKoreanStyle = frameImageUrl.includes('1200x1800')
+  const canvasW = isKoreanStyle ? 1200 : 1080
+  const canvasH = isKoreanStyle ? 1800 : 1920
+  const slots = isKoreanStyle ? KOREAN_SLOTS : RAMADAN_SLOTS
+
+  const aspectRatio = canvasW / canvasH
   const maxHeight = Math.round(maxWidth / aspectRatio)
 
-  const slots = ORIGINAL_SLOTS.map(s => ({
+  const scaledSlots = slots.map(s => ({
     ...s,
-    x: Math.round((s.x / CANVAS_WIDTH) * maxWidth),
-    y: Math.round((s.y / CANVAS_HEIGHT) * maxHeight),
-    width: Math.round((s.width / CANVAS_WIDTH) * maxWidth),
-    height: Math.round((s.height / CANVAS_HEIGHT) * maxHeight),
-    cornerRadius: Math.round((s.cornerRadius / CANVAS_WIDTH) * maxWidth),
+    x: Math.round((s.x / canvasW) * maxWidth),
+    y: Math.round((s.y / canvasH) * maxHeight),
+    width: Math.round((s.width / canvasW) * maxWidth),
+    height: Math.round((s.height / canvasH) * maxHeight),
+    cornerRadius: Math.round((s.cornerRadius / canvasW) * maxWidth),
   }))
 
   const canvas = document.createElement('canvas')
@@ -265,7 +332,7 @@ export async function generateCompositeThumbnail(
     }
   }
 
-  for (const slot of slots) {
+  for (const slot of scaledSlots) {
     const photo = loadedPhotos[slot.photoIndex]
     if (!photo) continue
     ctx.save()
