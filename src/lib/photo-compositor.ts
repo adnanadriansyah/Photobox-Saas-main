@@ -1,7 +1,6 @@
 // ============================================
-// Photo Compositing Utility
-// Canvas sesuai dimensi frame (1080x1920 untuk FRAME 4/5, 1200x1800 untuk Korean dll)
-// Slot menggunakan koordinat yang sesuai dengan canvas size
+// Photo Compositing Utility - FIXED v4
+// Koordinat slot diukur langsung dari pixel frame PNG
 // ============================================
 
 export interface PhotoSlot {
@@ -23,185 +22,100 @@ export interface CompositingOptions {
 }
 
 // ============================================
-// Slot definitions
+// Slot definitions — diukur dari pixel scan frame PNG
 // ============================================
 
-// Slot original untuk frame Ramadan (FRAME 4.png, FRAME 5.png) — 1080x1920
-const RAMADAN_SLOTS: PhotoSlot[] = [
-  { x: 0, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
-  { x: 580, y: 245, width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
-  { x: 0, y: 680, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
-  { x: 580, y: 670, width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
-  { x: 0, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
-  { x: 580, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
-]
-
+/**
+ * Frame Ramadan (FRAME 4.png / FRAME 5.png) — canvas 1080x1920
+ */
 export function generateRamadanFrameSlots(): PhotoSlot[] {
-  return RAMADAN_SLOTS.map(s => ({ ...s }))
-}
-
-export function generateGenericFrameSlots(): PhotoSlot[] {
   return [
-    { x: 55,  y: 230,  width: 500, height: 360, cornerRadius: 20, photoIndex: 0 },
-    { x: 645, y: 230,  width: 500, height: 360, cornerRadius: 20, photoIndex: 0 },
-    { x: 55,  y: 625,  width: 500, height: 360, cornerRadius: 20, photoIndex: 1 },
-    { x: 645, y: 625,  width: 500, height: 360, cornerRadius: 20, photoIndex: 1 },
-    { x: 55,  y: 1020, width: 500, height: 360, cornerRadius: 20, photoIndex: 2 },
-    { x: 645, y: 1020, width: 500, height: 360, cornerRadius: 20, photoIndex: 2 },
+    { x: 0,   y: 245,  width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
+    { x: 580, y: 245,  width: 500, height: 420, cornerRadius: 30, photoIndex: 0 },
+    { x: 0,   y: 680,  width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
+    { x: 580, y: 670,  width: 500, height: 420, cornerRadius: 30, photoIndex: 1 },
+    { x: 0,   y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
+    { x: 580, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
   ]
 }
 
-// ============================================
-// Auto-detect slot positions from frame PNG
-// ============================================
-
-export async function detectFrameSlots(
-  frameImageUrl: string
-): Promise<PhotoSlot[]> {
-  // Load frame as blob (avoid CORS taint)
-  const res = await fetch(frameImageUrl)
-  const blob = await res.blob()
-  const blobUrl = URL.createObjectURL(blob)
-
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => {
-      const W = img.width   // 1200
-      const H = img.height  // 1800
-
-      const canvas = document.createElement('canvas')
-      canvas.width = W
-      canvas.height = H
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0)
-
-      // Scan setiap piksel untuk cari area putih/transparan (slot foto)
-      // Area slot = piksel dengan alpha < 50 ATAU warna mendekati putih
-      // Scan horizontal dan vertikal untuk deteksi batas slot
-
-      const imageData = ctx.getImageData(0, 0, W, H)
-      const data = imageData.data
-
-      // Cari baris yang dominan transparan/putih (batas atas/bawah slot)
-      const isSlotPixel = (x: number, y: number): boolean => {
-        const i = (y * W + x) * 4
-        const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3]
-        // Transparan = slot
-        if (a < 100) return true
-        // Putih/terang = slot
-        if (r > 200 && g > 200 && b > 200) return true
-        return false
-      }
-
-      // Sample di 4 titik horizontal untuk tiap baris
-      // Kalau semua 4 titik adalah slot pixel = baris ini bagian dari slot
-      const slotRows: boolean[] = []
-      for (let y = 0; y < H; y++) {
-        const checks = [W*0.25, W*0.35, W*0.65, W*0.75].map(
-          x => isSlotPixel(Math.floor(x), y)
-        )
-        slotRows[y] = checks.every(c => c)
-      }
-
-      // Temukan range baris untuk setiap slot row (ada 3 slot row)
-      const rowRanges: {start: number, end: number}[] = []
-      let inSlot = false, start = 0
-      for (let y = 0; y < H; y++) {
-        if (slotRows[y] && !inSlot) { inSlot = true; start = y }
-        if (!slotRows[y] && inSlot) {
-          inSlot = false
-          if (y - start > 50) rowRanges.push({start, end: y})
-        }
-      }
-
-      // Sama untuk kolom (ada 2 kolom)
-      const slotCols: boolean[] = []
-      for (let x = 0; x < W; x++) {
-        const midY = Math.floor(H * 0.5)
-        slotCols[x] = isSlotPixel(x, midY)
-      }
-      const colRanges: {start: number, end: number}[] = []
-      let inCol = false, colStart = 0
-      for (let x = 0; x < W; x++) {
-        if (slotCols[x] && !inCol) { inCol = true; colStart = x }
-        if (!slotCols[x] && inCol) {
-          inCol = false
-          if (x - colStart > 50) colRanges.push({start: colStart, end: x})
-        }
-      }
-
-      URL.revokeObjectURL(blobUrl)
-
-      // Fallback ke koordinat manual kalau deteksi gagal
-      if (rowRanges.length < 3 || colRanges.length < 2) {
-        console.warn('[detectFrameSlots] Auto-detect failed, using manual coords')
-        resolve(generateGenericFrameSlots())
-        return
-      }
-
-      // Build slots dari detected ranges
-      const slots: PhotoSlot[] = []
-      for (let row = 0; row < Math.min(rowRanges.length, 3); row++) {
-        for (let col = 0; col < Math.min(colRanges.length, 2); col++) {
-          slots.push({
-            x: colRanges[col].start + 5,
-            y: rowRanges[row].start + 5,
-            width: colRanges[col].end - colRanges[col].start - 10,
-            height: rowRanges[row].end - rowRanges[row].start - 10,
-            cornerRadius: 20,
-            photoIndex: row,
-          })
-        }
-      }
-
-      console.log('[detectFrameSlots] Detected slots:',
-        slots.map(s => `[${s.photoIndex}] ${s.x},${s.y} ${s.width}x${s.height}`).join(' | ')
-      )
-      resolve(slots)
-    }
-    img.src = blobUrl
-  })
+/**
+ * Frame baru (beach/retro/floral/night/nature/korean) — canvas 1200x1800
+ * Koordinat diukur langsung dari pixel scan frame PNG:
+ * Col 0: x=51,  width=501  (51 to 552)
+ * Col 1: x=641, width=501  (641 to 1142)
+ * Row 0: y=222, height=376 (222 to 598)
+ * Row 1: y=617, height=376 (617 to 993)
+ * Row 2: y=1012,height=376 (1012 to 1388)
+ */
+export function generateGenericFrameSlots(): PhotoSlot[] {
+  return [
+    { x: 51,  y: 222,  width: 501, height: 376, cornerRadius: 0, photoIndex: 0 },
+    { x: 641, y: 222,  width: 501, height: 376, cornerRadius: 0, photoIndex: 0 },
+    { x: 51,  y: 617,  width: 501, height: 376, cornerRadius: 0, photoIndex: 1 },
+    { x: 641, y: 617,  width: 501, height: 376, cornerRadius: 0, photoIndex: 1 },
+    { x: 51,  y: 1012, width: 501, height: 376, cornerRadius: 0, photoIndex: 2 },
+    { x: 641, y: 1012, width: 501, height: 376, cornerRadius: 0, photoIndex: 2 },
+  ]
 }
 
-function getDimensionsForFrame(frameImageUrl: string) {
+function getDimensionsForFrame(frameImageUrl: string): { width: number; height: number } {
   const url = frameImageUrl.toLowerCase()
-  if (url.includes('frame 4') || url.includes('frame 5') ||
-      url.includes('frame4') || url.includes('frame5') ||
-      url.includes('ramad')) {
+  if (
+    url.includes('frame 4') || url.includes('frame 5') ||
+    url.includes('frame4') || url.includes('frame5') ||
+    url.includes('ramad')
+  ) {
     return { width: 1080, height: 1920 }
   }
   return { width: 1200, height: 1800 }
 }
 
+function getSlotsForFrame(frameImageUrl: string): PhotoSlot[] {
+  const url = frameImageUrl.toLowerCase()
+  if (
+    url.includes('frame 4') || url.includes('frame 5') ||
+    url.includes('frame4') || url.includes('frame5') ||
+    url.includes('ramad')
+  ) {
+    return generateRamadanFrameSlots()
+  }
+  return generateGenericFrameSlots()
+}
+
 // ============================================
 // CORS-safe image loader
+// Fetch as blob dulu → tidak taint canvas
 // ============================================
-
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise(async (resolve, reject) => {
-    // Base64 data URL — load langsung tanpa crossOrigin
+    // Base64 data URL — load langsung
     if (src.startsWith('data:')) {
       const img = new Image()
-      img.onload = () => resolve(img)
-      img.onerror = reject
+      img.onload = () => {
+        console.log(`[loadImage] base64 OK ${img.naturalWidth}x${img.naturalHeight}`)
+        resolve(img)
+      }
+      img.onerror = (e) => reject(new Error(`base64 load failed: ${e}`))
       img.src = src
       return
     }
 
-    // File dari server — fetch as blob dulu biar tidak taint canvas
+    // URL server → fetch blob dulu (bypass CORS taint)
     try {
       const res = await fetch(src, { cache: 'force-cache' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${src}`)
       const blob = await res.blob()
       const blobUrl = URL.createObjectURL(blob)
       const img = new Image()
       img.onload = () => {
+        console.log(`[loadImage] url OK ${img.naturalWidth}x${img.naturalHeight} — ${src}`)
         URL.revokeObjectURL(blobUrl)
         resolve(img)
       }
       img.onerror = () => {
         URL.revokeObjectURL(blobUrl)
-        reject(new Error(`Failed to load: ${src}`))
+        reject(new Error(`blob load failed: ${src}`))
       }
       img.src = blobUrl
     } catch (err) {
@@ -211,34 +125,33 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 // ============================================
-// Canvas drawing helpers
+// Canvas helpers
 // ============================================
 
 function roundedRect(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number
+  x: number, y: number,
+  w: number, h: number,
+  r: number
 ): void {
+  if (r <= 0) {
+    ctx.rect(x, y, w, h)
+    return
+  }
+  r = Math.min(r, w / 2, h / 2)
   ctx.beginPath()
-  ctx.moveTo(x + radius, y)
-  ctx.lineTo(x + width - radius, y)
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
-  ctx.lineTo(x + width, y + height - radius)
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
-  ctx.lineTo(x + radius, y + height)
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
-  ctx.lineTo(x, y + radius)
-  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
   ctx.closePath()
 }
 
-/**
- * Draw photo into slot with "cover" fit (crop to fill, centered)
- * Handles any aspect ratio (landscape/portrait/square)
- */
 function drawPhotoCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -247,42 +160,34 @@ function drawPhotoCover(
   const imgRatio = img.naturalWidth / img.naturalHeight
   const slotRatio = slot.width / slot.height
 
-  let drawWidth: number
-  let drawHeight: number
-  let offsetX: number
-  let offsetY: number
+  let dw: number, dh: number, ox: number, oy: number
 
   if (imgRatio > slotRatio) {
-    drawHeight = slot.height
-    drawWidth = img.naturalWidth * (drawHeight / img.naturalHeight)
-    offsetX = slot.x - (drawWidth - slot.width) / 2
-    offsetY = slot.y
+    // Foto lebih lebar → fit height, crop kiri-kanan
+    dh = slot.height
+    dw = img.naturalWidth * (dh / img.naturalHeight)
+    ox = slot.x - (dw - slot.width) / 2
+    oy = slot.y
   } else {
-    drawWidth = slot.width
-    drawHeight = img.naturalHeight * (drawWidth / img.naturalWidth)
-    offsetX = slot.x
-    offsetY = slot.y - (drawHeight - slot.height) / 2
+    // Foto lebih tinggi → fit width, crop atas-bawah
+    dw = slot.width
+    dh = img.naturalHeight * (dw / img.naturalWidth)
+    ox = slot.x
+    oy = slot.y - (dh - slot.height) / 2
   }
 
-  ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
+  ctx.drawImage(img, ox, oy, dw, dh)
 }
 
 // ============================================
-// Main composite function
+// Core compositor
 // ============================================
 
-/**
- * Composite photos ke frame template
- * Canvas menggunakan dimensi dari options (outputWidth x outputHeight)
- */
 export async function compositePhotosToFrame(options: CompositingOptions): Promise<string> {
-  const { frameImageUrl, slots, photos, outputWidth, outputHeight, filter } = options
+  const { frameImageUrl, slots, photos, filter } = options
+  const { width: cw, height: ch } = getDimensionsForFrame(frameImageUrl)
 
-  const dims = getDimensionsForFrame(frameImageUrl)
-  const cw = dims.width
-  const ch = dims.height
-
-  console.log(`[composite] START canvas=${cw}x${ch} slots=${slots.length} photos=${photos.length}`)
+  console.log(`[composite] canvas=${cw}x${ch} slots=${slots.length} photos=${photos.length}`)
 
   const canvas = document.createElement('canvas')
   canvas.width = cw
@@ -291,47 +196,39 @@ export async function compositePhotosToFrame(options: CompositingOptions): Promi
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
-  // STEP 1: White background
+  // White background
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, cw, ch)
 
-  // STEP 2: Load frame
-  console.log('[composite] Loading frame...')
+  // Load frame
   const frameImg = await loadImage(frameImageUrl)
-  console.log(`[composite] Frame=${frameImg.naturalWidth}x${frameImg.naturalHeight}`)
 
-  // STEP 3: Load photos
+  // Load photos
+  const validPhotos = photos.filter(p => p && p.length > 10)
   const loadedPhotos: (HTMLImageElement | null)[] = []
-  for (let i = 0; i < photos.length; i++) {
-    if (photos[i] && photos[i].length > 100) {
-      console.log(`[composite] Loading photo ${i}: len=${photos[i].length}`)
-      try {
-        loadedPhotos[i] = await loadImage(photos[i])
-      } catch (error) {
-        console.error(`[composite] Photo ${i} load failed:`, error)
-        loadedPhotos[i] = null
-      }
-    } else {
-      console.warn(`[composite] Photo ${i} invalid (len=${photos[i]?.length})`)
+  for (let i = 0; i < validPhotos.length; i++) {
+    try {
+      loadedPhotos[i] = await loadImage(validPhotos[i])
+    } catch (err) {
+      console.error(`[composite] photo ${i} failed:`, err)
       loadedPhotos[i] = null
     }
   }
 
-  const loadedCount = loadedPhotos.filter(Boolean).length
-  console.log(`[composite] Photos loaded: ${loadedCount}/${photos.length}`)
+  console.log(`[composite] loaded ${loadedPhotos.filter(Boolean).length}/${validPhotos.length} photos`)
 
-  // STEP 4: Draw photos ke slot
+  // Draw photos into slots
   for (let si = 0; si < slots.length; si++) {
     const slot = slots[si]
     const photo = loadedPhotos[slot.photoIndex]
-
     if (!photo) {
-      console.warn(`[composite] Slot ${si}: NO PHOTO for index ${slot.photoIndex}`)
+      console.warn(`[composite] slot ${si} no photo for index ${slot.photoIndex}`)
       continue
     }
+    console.log(`[composite] slot ${si} → photo[${slot.photoIndex}] at x=${slot.x} y=${slot.y} ${slot.width}x${slot.height}`)
 
-    console.log(`[composite] Slot ${si}: drawing photoIndex=${slot.photoIndex} at (${slot.x},${slot.y} ${slot.width}x${slot.height})`)
     ctx.save()
+    ctx.beginPath()
     roundedRect(ctx, slot.x, slot.y, slot.width, slot.height, slot.cornerRadius)
     ctx.clip()
     if (filter && filter !== 'none') ctx.filter = filter
@@ -340,16 +237,20 @@ export async function compositePhotosToFrame(options: CompositingOptions): Promi
     ctx.restore()
   }
 
-  // STEP 5: Frame di ATAS foto
-  console.log('[composite] Drawing frame overlay...')
+  // Draw frame ON TOP of photos
   ctx.drawImage(frameImg, 0, 0, cw, ch)
 
-  const result = canvas.toDataURL('image/jpeg', 0.92)
-  console.log(`[composite] DONE result len=${result.length}`)
+  // Export
+  let result: string
+  try {
+    result = canvas.toDataURL('image/jpeg', 0.92)
+  } catch (e) {
+    throw new Error(`Canvas tainted — toDataURL failed: ${e}`)
+  }
 
-  // Validasi: canvas tainted akan menghasilkan dataURL terlalu kecil
+  console.log(`[composite] result length=${result.length}`)
   if (result.length < 50000) {
-    throw new Error(`Canvas tainted — result too small (${result.length} bytes)`)
+    throw new Error(`Result too small (${result.length}) — canvas likely tainted`)
   }
 
   return result
@@ -359,53 +260,6 @@ export async function compositePhotosToFrame(options: CompositingOptions): Promi
 // Public API
 // ============================================
 
-/**
- * Composite ke frame — otomatis deteksi ukuran frame dari URL
- */
-export async function compositeToFrame(
-  frameImageUrl: string,
-  photos: string[],
-  _outputWidth?: number,
-  _outputHeight?: number,
-  filter?: string
-): Promise<string> {
-  console.log(`[compositeToFrame] frame=${frameImageUrl.substring(0, 60)} photos=${photos.length}`)
-
-  if (!photos || photos.length === 0) {
-    throw new Error('No photos to composite')
-  }
-
-  const validPhotos = photos.filter(Boolean)
-
-  const url = frameImageUrl.toLowerCase()
-  const isRamadan = url.includes('frame 4') || url.includes('frame 5') ||
-                    url.includes('frame4') || url.includes('frame5') ||
-                    url.includes('ramad')
-
-  const dims = isRamadan
-    ? { width: 1080, height: 1920 }
-    : { width: 1200, height: 1800 }
-
-  const slots = isRamadan
-    ? generateRamadanFrameSlots()
-    : await detectFrameSlots(frameImageUrl)
-
-  const outputWidth = _outputWidth || dims.width
-  const outputHeight = _outputHeight || dims.height
-
-  console.log(`[compositeToFrame] detected: ${dims.width}x${dims.height} slots=${slots.length}`)
-
-  return compositePhotosToFrame({
-    frameImageUrl,
-    slots,
-    photos: validPhotos,
-    outputWidth,
-    outputHeight,
-    filter,
-  })
-}
-
-/** Legacy alias */
 export async function compositeToRamadanFrame(
   frameImageUrl: string,
   photos: string[],
@@ -413,44 +267,48 @@ export async function compositeToRamadanFrame(
   _outputHeight?: number,
   filter?: string
 ): Promise<string> {
-  return compositeToFrame(frameImageUrl, photos, _outputWidth, _outputHeight, filter)
+  const validPhotos = photos.filter(Boolean)
+  if (validPhotos.length === 0) throw new Error('No valid photos')
+
+  console.log(`[compositeToRamadanFrame] frame=${frameImageUrl} photos=${validPhotos.length}`)
+
+  const slots = getSlotsForFrame(frameImageUrl)
+  const dims = getDimensionsForFrame(frameImageUrl)
+
+  return compositePhotosToFrame({
+    frameImageUrl,
+    slots,
+    photos: validPhotos,
+    outputWidth: dims.width,
+    outputHeight: dims.height,
+    filter,
+  })
 }
 
-/**
- * Thumbnail preview
- */
+// Alias
+export const compositeToFrame = compositeToRamadanFrame
+
 export async function generateCompositeThumbnail(
   frameImageUrl: string,
   photos: string[],
   maxWidth: number = 400,
   filter?: string
 ): Promise<string> {
-  const url = frameImageUrl.toLowerCase()
-  const isRamadan = url.includes('frame 4') || url.includes('frame 5') ||
-                    url.includes('frame4') || url.includes('frame5') ||
-                    url.includes('ramad')
+  const validPhotos = photos.filter(Boolean)
+  if (validPhotos.length === 0) throw new Error('No valid photos')
 
-  const dims = isRamadan
-    ? { width: 1080, height: 1920 }
-    : { width: 1200, height: 1800 }
+  const dims = getDimensionsForFrame(frameImageUrl)
+  const maxHeight = Math.round(maxWidth * dims.height / dims.width)
+  const scaleX = maxWidth / dims.width
+  const scaleY = maxHeight / dims.height
 
-  const canvasW = dims.width
-  const canvasH = dims.height
-
-  const slots = isRamadan
-    ? generateRamadanFrameSlots()
-    : await detectFrameSlots(frameImageUrl)
-
-  const aspectRatio = canvasW / canvasH
-  const maxHeight = Math.round(maxWidth / aspectRatio)
-
-  const scaledSlots = slots.map(s => ({
+  const slots = getSlotsForFrame(frameImageUrl).map(s => ({
     ...s,
-    x: Math.round((s.x / canvasW) * maxWidth),
-    y: Math.round((s.y / canvasH) * maxHeight),
-    width: Math.round((s.width / canvasW) * maxWidth),
-    height: Math.round((s.height / canvasH) * maxHeight),
-    cornerRadius: Math.round((s.cornerRadius / canvasW) * maxWidth),
+    x: Math.round(s.x * scaleX),
+    y: Math.round(s.y * scaleY),
+    width: Math.round(s.width * scaleX),
+    height: Math.round(s.height * scaleY),
+    cornerRadius: Math.round(s.cornerRadius * scaleX),
   }))
 
   const canvas = document.createElement('canvas')
@@ -464,20 +322,16 @@ export async function generateCompositeThumbnail(
   ctx.fillRect(0, 0, maxWidth, maxHeight)
 
   const frameImg = await loadImage(frameImageUrl)
-
   const loadedPhotos: (HTMLImageElement | null)[] = []
-  for (let i = 0; i < photos.length; i++) {
-    if (photos[i]) {
-      try { loadedPhotos[i] = await loadImage(photos[i]) } catch { loadedPhotos[i] = null }
-    } else {
-      loadedPhotos[i] = null
-    }
+  for (let i = 0; i < validPhotos.length; i++) {
+    try { loadedPhotos[i] = await loadImage(validPhotos[i]) } catch { loadedPhotos[i] = null }
   }
 
-  for (const slot of scaledSlots) {
+  for (const slot of slots) {
     const photo = loadedPhotos[slot.photoIndex]
     if (!photo) continue
     ctx.save()
+    ctx.beginPath()
     roundedRect(ctx, slot.x, slot.y, slot.width, slot.height, slot.cornerRadius)
     ctx.clip()
     if (filter && filter !== 'none') ctx.filter = filter
@@ -487,6 +341,5 @@ export async function generateCompositeThumbnail(
   }
 
   ctx.drawImage(frameImg, 0, 0, maxWidth, maxHeight)
-
   return canvas.toDataURL('image/jpeg', 0.9)
 }
