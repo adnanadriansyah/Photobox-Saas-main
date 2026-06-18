@@ -41,39 +41,14 @@ export function generateRamadanFrameSlots(): PhotoSlot[] {
 }
 
 export function generateGenericFrameSlots(): PhotoSlot[] {
-  // Frame 1200x1800
-  // Header area (judul frame): ~200px dari atas
-  // Footer area (teks bawah): ~150px dari bawah
-  // Padding kiri-kanan: ~60px
-  // Gap antar slot: ~20px
-  // 2 kolom, 3 baris
-
-  const W = 1200
-  const H = 1800
-  const PAD_X = 60      // padding kiri dan kanan
-  const PAD_TOP = 200   // header frame (judul/dekorasi atas)
-  const PAD_BOT = 150   // footer frame (teks/dekorasi bawah)
-  const GAP_X = 20      // jarak horizontal antar kolom
-  const GAP_Y = 20      // jarak vertikal antar baris
-  const cr = 20         // corner radius
-
-  const colW = Math.floor((W - PAD_X * 2 - GAP_X) / 2)
-  const rowH = Math.floor((H - PAD_TOP - PAD_BOT - GAP_Y * 2) / 3)
-
-  const slots: PhotoSlot[] = []
-  for (let row = 0; row < 3; row++) {
-    for (let col = 0; col < 2; col++) {
-      slots.push({
-        x: PAD_X + col * (colW + GAP_X),
-        y: PAD_TOP + row * (rowH + GAP_Y),
-        width: colW,
-        height: rowH,
-        cornerRadius: cr,
-        photoIndex: row,
-      })
-    }
-  }
-  return slots
+  return [
+    { x: 55,  y: 230,  width: 500, height: 360, cornerRadius: 20, photoIndex: 0 },
+    { x: 645, y: 230,  width: 500, height: 360, cornerRadius: 20, photoIndex: 0 },
+    { x: 55,  y: 625,  width: 500, height: 360, cornerRadius: 20, photoIndex: 1 },
+    { x: 645, y: 625,  width: 500, height: 360, cornerRadius: 20, photoIndex: 1 },
+    { x: 55,  y: 1020, width: 500, height: 360, cornerRadius: 20, photoIndex: 2 },
+    { x: 645, y: 1020, width: 500, height: 360, cornerRadius: 20, photoIndex: 2 },
+  ]
 }
 
 // ============================================
