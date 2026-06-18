@@ -63,31 +63,33 @@ export function generateRamadanFrameSlots(): PhotoSlot[] {
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise(async (resolve, reject) => {
-    // base64 → load langsung tanpa crossOrigin
+    // Base64 data URL — load langsung tanpa crossOrigin
     if (src.startsWith('data:')) {
       const img = new Image()
       img.onload = () => resolve(img)
-      img.onerror = () => reject(new Error(`Failed to load base64 image`))
+      img.onerror = reject
       img.src = src
       return
     }
 
-    // URL server → fetch as blob dulu (bypass CORS)
+    // File dari server — fetch as blob dulu biar tidak taint canvas
     try {
-      const res = await fetch(src)
+      const res = await fetch(src, { cache: 'force-cache' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const blob = await res.blob()
       const blobUrl = URL.createObjectURL(blob)
       const img = new Image()
-      img.onload = () => { URL.revokeObjectURL(blobUrl); resolve(img) }
-      img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error(`Failed to load image blob: ${src.substring(0, 60)}`)) }
+      img.onload = () => {
+        URL.revokeObjectURL(blobUrl)
+        resolve(img)
+      }
+      img.onerror = () => {
+        URL.revokeObjectURL(blobUrl)
+        reject(new Error(`Failed to load: ${src}`))
+      }
       img.src = blobUrl
-    } catch {
-      // fallback: crossOrigin (kalau server support CORS)
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => resolve(img)
-      img.onerror = () => reject(new Error(`Failed to load image: ${src.substring(0, 80)}`))
-      img.src = src
+    } catch (err) {
+      reject(err)
     }
   })
 }
