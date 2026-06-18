@@ -36,25 +36,54 @@ const RAMADAN_SLOTS: PhotoSlot[] = [
   { x: 580, y: 1120, width: 500, height: 420, cornerRadius: 30, photoIndex: 2 },
 ]
 
-// Slot untuk frame 1200x1800 (Korean, Nature, Night, Floral, Beach, Retro, dll)
-// Scale 4x dari preview 300x450
-// PAD=56, GAP=32, TOP=152, BOT=176
-// colW = (1200 - 56*2 - 32) / 2 = 528
-// rowH = (1800 - 152 - 176 - 32*2) / 3 = 469
-const KOREAN_SLOTS: PhotoSlot[] = [
-  // Row 0
-  { x: 56, y: 152, width: 528, height: 469, cornerRadius: 30, photoIndex: 0 },
-  { x: 616, y: 152, width: 528, height: 469, cornerRadius: 30, photoIndex: 0 },
-  // Row 1
-  { x: 56, y: 653, width: 528, height: 469, cornerRadius: 30, photoIndex: 1 },
-  { x: 616, y: 653, width: 528, height: 469, cornerRadius: 30, photoIndex: 1 },
-  // Row 2
-  { x: 56, y: 1154, width: 528, height: 469, cornerRadius: 30, photoIndex: 2 },
-  { x: 616, y: 1154, width: 528, height: 469, cornerRadius: 30, photoIndex: 2 },
-]
-
 export function generateRamadanFrameSlots(): PhotoSlot[] {
   return RAMADAN_SLOTS.map(s => ({ ...s }))
+}
+
+export function generateGenericFrameSlots(): PhotoSlot[] {
+  // Frame 1200x1800
+  // Header area (judul frame): ~200px dari atas
+  // Footer area (teks bawah): ~150px dari bawah
+  // Padding kiri-kanan: ~60px
+  // Gap antar slot: ~20px
+  // 2 kolom, 3 baris
+
+  const W = 1200
+  const H = 1800
+  const PAD_X = 60      // padding kiri dan kanan
+  const PAD_TOP = 200   // header frame (judul/dekorasi atas)
+  const PAD_BOT = 150   // footer frame (teks/dekorasi bawah)
+  const GAP_X = 20      // jarak horizontal antar kolom
+  const GAP_Y = 20      // jarak vertikal antar baris
+  const cr = 20         // corner radius
+
+  const colW = Math.floor((W - PAD_X * 2 - GAP_X) / 2)
+  const rowH = Math.floor((H - PAD_TOP - PAD_BOT - GAP_Y * 2) / 3)
+
+  const slots: PhotoSlot[] = []
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 2; col++) {
+      slots.push({
+        x: PAD_X + col * (colW + GAP_X),
+        y: PAD_TOP + row * (rowH + GAP_Y),
+        width: colW,
+        height: rowH,
+        cornerRadius: cr,
+        photoIndex: row,
+      })
+    }
+  }
+  return slots
+}
+
+function getDimensionsForFrame(frameImageUrl: string) {
+  const url = frameImageUrl.toLowerCase()
+  if (url.includes('frame 4') || url.includes('frame 5') ||
+      url.includes('frame4') || url.includes('frame5') ||
+      url.includes('ramad')) {
+    return { width: 1080, height: 1920 }
+  }
+  return { width: 1200, height: 1800 }
 }
 
 // ============================================
@@ -164,18 +193,22 @@ function drawPhotoCover(
 export async function compositePhotosToFrame(options: CompositingOptions): Promise<string> {
   const { frameImageUrl, slots, photos, outputWidth, outputHeight, filter } = options
 
-  console.log(`[composite] START canvas=${outputWidth}x${outputHeight} slots=${slots.length} photos=${photos.length}`)
+  const dims = getDimensionsForFrame(frameImageUrl)
+  const cw = dims.width
+  const ch = dims.height
+
+  console.log(`[composite] START canvas=${cw}x${ch} slots=${slots.length} photos=${photos.length}`)
 
   const canvas = document.createElement('canvas')
-  canvas.width = outputWidth
-  canvas.height = outputHeight
+  canvas.width = cw
+  canvas.height = ch
   const ctx = canvas.getContext('2d')!
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
 
   // STEP 1: White background
   ctx.fillStyle = '#FFFFFF'
-  ctx.fillRect(0, 0, outputWidth, outputHeight)
+  ctx.fillRect(0, 0, cw, ch)
 
   // STEP 2: Load frame
   console.log('[composite] Loading frame...')
@@ -224,7 +257,7 @@ export async function compositePhotosToFrame(options: CompositingOptions): Promi
 
   // STEP 5: Frame di ATAS foto
   console.log('[composite] Drawing frame overlay...')
-  ctx.drawImage(frameImg, 0, 0, outputWidth, outputHeight)
+  ctx.drawImage(frameImg, 0, 0, cw, ch)
 
   const result = canvas.toDataURL('image/jpeg', 0.92)
   console.log(`[composite] DONE result len=${result.length}`)
@@ -258,13 +291,14 @@ export async function compositeToFrame(
   }
 
   // Deteksi tipe frame dari URL
-  const isKoreanStyle = frameImageUrl.includes('1200x1800')
+  const dims = getDimensionsForFrame(frameImageUrl)
+  const useGeneric = dims.width === 1200
 
-  const outputWidth = _outputWidth || (isKoreanStyle ? 1200 : 1080)
-  const outputHeight = _outputHeight || (isKoreanStyle ? 1800 : 1920)
-  const slots = isKoreanStyle ? KOREAN_SLOTS : RAMADAN_SLOTS
+  const outputWidth = _outputWidth || dims.width
+  const outputHeight = _outputHeight || dims.height
+  const slots = useGeneric ? generateGenericFrameSlots() : RAMADAN_SLOTS
 
-  console.log(`[compositeToFrame] detected: ${isKoreanStyle ? '1200x1800 (Korean style)' : '1080x1920 (Ramadan)'}`)
+  console.log(`[compositeToFrame] detected: ${dims.width}x${dims.height}`)
 
   return compositePhotosToFrame({
     frameImageUrl,
@@ -296,10 +330,11 @@ export async function generateCompositeThumbnail(
   maxWidth: number = 400,
   filter?: string
 ): Promise<string> {
-  const isKoreanStyle = frameImageUrl.includes('1200x1800')
-  const canvasW = isKoreanStyle ? 1200 : 1080
-  const canvasH = isKoreanStyle ? 1800 : 1920
-  const slots = isKoreanStyle ? KOREAN_SLOTS : RAMADAN_SLOTS
+  const dims = getDimensionsForFrame(frameImageUrl)
+  const canvasW = dims.width
+  const canvasH = dims.height
+  const useGeneric = dims.width === 1200
+  const slots = useGeneric ? generateGenericFrameSlots() : RAMADAN_SLOTS
 
   const aspectRatio = canvasW / canvasH
   const maxHeight = Math.round(maxWidth / aspectRatio)
