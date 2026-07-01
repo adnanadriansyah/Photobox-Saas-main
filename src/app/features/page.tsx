@@ -16,16 +16,16 @@ import { Navbar } from '@/components/landing/Navbar'
 import { Footer } from '@/components/landing/Footer'
 
 const featureImages = {
-  qris: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
-  print: 'https://images.unsplash.com/photo-1563274069-12b0f5c8c2c5?w=600&h=400&fit=crop',
-  gif: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=600&h=400&fit=crop',
-  newspaper: 'https://images.unsplash.com/photo-1560472355-536de3962603?w=600&h=400&fit=crop',
-  qrcode: 'https://images.unsplash.com/photo-1595079676339-1533801a3d9e?w=400&h=300&fit=crop',
-  offline: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop',
-  cloud: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=400&h=300&fit=crop',
-  secure: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop',
-  analytics: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop',
-  template: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
+  qris: '/photos/features/qris.jpg',
+  print: '/photos/features/silent-print.jpg',
+  gif: '/photos/features/gif-engine.jpg',
+  newspaper: '/photos/features/newspaper.jpg',
+  qrcode: '/photos/features/qrcode.jpg',
+  offline: '/photos/features/offline.jpg',
+  cloud: '/photos/features/cloud.jpg',
+  secure: '/photos/features/secure.jpg',
+  analytics: '/photos/features/analytics.jpg',
+  template: '/photos/features/template.jpg',
 }
 
 // ============================================

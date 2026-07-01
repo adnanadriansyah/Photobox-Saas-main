@@ -50,22 +50,22 @@ export default function HomePage() {
 
   const features = [
     {
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop',
+      image: '/photos/features/qris.jpg',
       title: 'QRIS Payment',
       description: 'Bayar foto cukup scan QRIS dari e-wallet atau m-banking. Cepat, gampang, anti-ribet!'
     },
     {
-      image: 'https://images.unsplash.com/photo-1563274069-12b0f5c8c2c5?w=400&h=300&fit=crop',
+      image: '/photos/features/silent-print.jpg',
       title: 'Silent Print',
       description: 'Foto langsung jadi dalam detik, tanpa suara berisik. Cocok untuk acara formal!'
     },
     {
-      image: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=400&h=300&fit=crop',
+      image: '/photos/features/gif-engine.jpg',
       title: 'GIF Engine',
       description: 'Buat GIF seru dari foto beruntun, langsung bisa di-share ke medsos!'
     },
     {
-      image: 'https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=300&fit=crop',
+      image: '/photos/features/newspaper.jpg',
       title: 'Newspaper A4',
       description: 'Template koran vintage yang aesthetic. Bisa custom judul & caption sendiri!'
     }
