@@ -592,6 +592,126 @@ export function TemplateSelector({ templates, onSelect, sessionTimerActive, sess
 }
 
 // ============================================
+// Booth Guide Component — Panduan Sebelum Foto
+// ============================================
+
+interface BoothGuideProps {
+  template?: Template
+  onStart: () => void
+}
+
+export function BoothGuide({ template, onStart }: BoothGuideProps) {
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-3xl p-8 max-w-lg w-full"
+      >
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Camera className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Siap-Siap Berfoto!</h2>
+          <p className="text-gray-500 mt-2">Ikuti panduan berikut agar hasil fotonya maksimal</p>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-4 mb-8">
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex items-start gap-4 p-4 bg-purple-50 rounded-2xl"
+          >
+            <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">
+              1
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">3 Foto Otomatis</h3>
+              <p className="text-sm text-gray-600">Kami akan mengambil 3 foto secara beruntun. Cukup bergaya dan tersenyum!</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex items-start gap-4 p-4 bg-pink-50 rounded-2xl"
+          >
+            <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">
+              2
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Hitungan Mundur</h3>
+              <p className="text-sm text-gray-600">Ada hitungan mundur 8-5-3-1 sebelum setiap foto. Siap-siap pas angka 1!</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-start gap-4 p-4 bg-orange-50 rounded-2xl"
+          >
+            <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">
+              3
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Pilih Filter & Cetak</h3>
+              <p className="text-sm text-gray-600">Abis difoto, kamu bisa pilih filter keren dan cetak fotonya langsung!</p>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Template Preview (if selected) */}
+        {template && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mb-8 p-4 bg-gray-50 rounded-2xl text-center"
+          >
+            <p className="text-xs text-gray-500 mb-2">Template terpilih:</p>
+            <div className="flex items-center justify-center gap-3">
+              <img
+                src={template.thumbnailUrl || template.imageUrl}
+                alt={template.name}
+                className="w-12 h-16 object-cover rounded-lg"
+              />
+              <div className="text-left">
+                <p className="font-semibold text-gray-900">{template.name}</p>
+                <p className="text-sm text-gray-500">{template.theme}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Start Button */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onStart}
+          className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2"
+        >
+          <Camera className="w-6 h-6" />
+          Mulai Foto!
+        </motion.button>
+
+        <p className="text-center text-gray-400 text-sm mt-4">
+          Tenang, kamu bisa ulang foto kalau kurang puas
+        </p>
+      </motion.div>
+    </div>
+  )
+}
+
+// ============================================
 // Booth Layout Component (Camera + Template Preview)
 // ============================================
 

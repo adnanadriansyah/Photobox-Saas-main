@@ -7,10 +7,6 @@ import {
   MapPin, 
   ArrowRight, 
   Sparkles,
-  CreditCard,
-  Printer,
-  Film,
-  Newspaper,
   Users,
   Image as ImageIcon,
   TrendingUp,
@@ -54,24 +50,24 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: CreditCard,
+      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop',
       title: 'QRIS Payment',
-      description: 'Pembayaran instan dengan QRIS'
+      description: 'Bayar foto cukup scan QRIS dari e-wallet atau m-banking. Cepat, gampang, anti-ribet!'
     },
     {
-      icon: Printer,
+      image: 'https://images.unsplash.com/photo-1563274069-12b0f5c8c2c5?w=400&h=300&fit=crop',
       title: 'Silent Print',
-      description: 'Teknologi printing tanpa suara'
+      description: 'Foto langsung jadi dalam detik, tanpa suara berisik. Cocok untuk acara formal!'
     },
     {
-      icon: Film,
+      image: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=400&h=300&fit=crop',
       title: 'GIF Engine',
-      description: 'Buat GIF animasi dari burst foto'
+      description: 'Buat GIF seru dari foto beruntun, langsung bisa di-share ke medsos!'
     },
     {
-      icon: Newspaper,
+      image: 'https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=300&fit=crop',
       title: 'Newspaper A4',
-      description: 'Template koran A4 yang unik'
+      description: 'Template koran vintage yang aesthetic. Bisa custom judul & caption sendiri!'
     }
   ]
 
@@ -314,7 +310,7 @@ export default function HomePage() {
             {features.map((feature, index) => (
               <FeatureCard 
                 key={feature.title}
-                icon={feature.icon}
+                image={feature.image}
                 title={feature.title}
                 description={feature.description}
                 index={index}
@@ -610,7 +606,7 @@ function StatCard({ icon: Icon, value, label, color }: StatCardProps) {
 // ============================================
 
 interface FeatureCardProps {
-  icon: React.ComponentType<{ className?: string }>
+  image: string
   title: string
   description: string
   index: number
@@ -618,7 +614,7 @@ interface FeatureCardProps {
   secondaryColor: string
 }
 
-function FeatureCard({ icon: Icon, title, description, index, primaryColor, secondaryColor }: FeatureCardProps) {
+function FeatureCard({ image, title, description, index }: FeatureCardProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
 
@@ -629,18 +625,19 @@ function FeatureCard({ icon: Icon, title, description, index, primaryColor, seco
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ delay: index * 0.1 }}
       whileHover={{ y: -8, scale: 1.02 }}
-      className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all"
+      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all group"
     >
-      <div 
-        className="w-14 h-14 rounded-xl flex items-center justify-center mb-4"
-        style={{ 
-          background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`
-        }}
-      >
-        <Icon className="w-7 h-7 text-white" />
+      <div className="h-40 overflow-hidden">
+        <img
+          src={image}
+          alt={title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+        />
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <div className="p-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600">{description}</p>
+      </div>
     </motion.div>
   )
 }

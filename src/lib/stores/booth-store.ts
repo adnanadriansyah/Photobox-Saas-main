@@ -43,7 +43,7 @@ export interface BoothSession {
   templateId?: string
   template?: Template
   photos: Photo[]
-  status: 'payment' | 'template-selection' | 'capturing' | 'countdown' | 'processing' | 'preview' | 'printing' | 'completed'
+  status: 'payment' | 'template-selection' | 'guide' | 'capturing' | 'countdown' | 'processing' | 'preview' | 'printing' | 'completed'
   countdownValue: number
   currentPhotoIndex: number
   totalPhotos: number
@@ -98,6 +98,7 @@ interface BoothState {
   setCompleted: (galleryCode: string) => void
   resetSession: () => void
   setTemplateSelection: () => void
+  setGuide: () => void
   setPrinting: () => void
   
   // Actions - Config
@@ -261,6 +262,15 @@ export const useBoothStore = create<BoothState>()(
           session: {
             ...state.session,
             status: 'template-selection',
+          },
+        }))
+      },
+
+      setGuide: () => {
+        set((state) => ({
+          session: {
+            ...state.session,
+            status: 'guide',
           },
         }))
       },

@@ -12,6 +12,7 @@ import {
   OfflineBanner,
   SessionTimer,
   TemplateSelector,
+  BoothGuide,
   BoothLayout,
   PrintUpsellModal,
   CompletedScreen,
@@ -379,6 +380,10 @@ export default function BoothPage() {
   const handleTemplateSelect = (template: Template) => {
     setTemplate(template)
     startSessionTimer()
+    useBoothStore.getState().setGuide()
+  }
+
+  const handleGuideStart = () => {
     useBoothStore.getState().setCapturing()
   }
 
@@ -744,6 +749,13 @@ export default function BoothPage() {
           onSelect={handleTemplateSelect}
           sessionTimerActive={session.sessionTimerActive}
           sessionTimerSeconds={session.sessionTimer}
+        />
+      )}
+
+      {session.status === 'guide' && (
+        <BoothGuide
+          template={session.template}
+          onStart={handleGuideStart}
         />
       )}
 

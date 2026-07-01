@@ -2,22 +2,31 @@
 
 import { motion } from 'framer-motion'
 import { 
-  Camera, 
-  CreditCard,
-  Printer,
-  Film,
-  Newspaper,
-  QrCode,
-  Wifi,
-  Cloud,
-  Shield,
   Zap,
-  ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  QrCode,
+  WifiOff,
+  Cloud,
+  ShieldCheck,
+  BarChart3,
+  Layout,
 } from 'lucide-react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import { Navbar } from '@/components/landing/Navbar'
 import { Footer } from '@/components/landing/Footer'
+
+const featureImages = {
+  qris: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
+  print: 'https://images.unsplash.com/photo-1563274069-12b0f5c8c2c5?w=600&h=400&fit=crop',
+  gif: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=600&h=400&fit=crop',
+  newspaper: 'https://images.unsplash.com/photo-1560472355-536de3962603?w=600&h=400&fit=crop',
+  qrcode: 'https://images.unsplash.com/photo-1595079676339-1533801a3d9e?w=400&h=300&fit=crop',
+  offline: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop',
+  cloud: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=400&h=300&fit=crop',
+  secure: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop',
+  analytics: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop',
+  template: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
+}
 
 // ============================================
 // Features Page
@@ -28,81 +37,87 @@ export default function FeaturesPage() {
 
   const mainFeatures = [
     {
-      icon: CreditCard,
+      image: featureImages.qris,
       title: 'QRIS Payment',
-      description: 'Pembayaran instan dengan QRIS, mendukung semua e-wallet dan bank di Indonesia. Transaksi cepat dan aman untuk setiap sesi foto.',
+      description: 'Tamu Anda bisa bayar foto cukup dengan scan QRIS dari aplikasi e-wallet atau mobile banking favorit mereka. Semua metode pembayaran populer di Indonesia didukung — GoPay, OVO, DANA, ShopeePay, sampai transfer bank. Pembayaran langsung terverifikasi dalam hitungan detik, dan foto langsung bisa dicetak. Gampang, cepat, tanpa ribet!',
       benefits: [
-        'Mendukung semua e-wallet (GoPay, OVO, DANA, ShopeePay)',
-        'Transfer bank langsung',
-        'Proses pembayaran < 3 detik',
-        'Notifikasi real-time'
+        'Scan QRIS dari e-wallet atau m-banking mana aja',
+        'Pembayaran langsung terverifikasi dalam 3 detik',
+        'Cocok untuk event, bazaar, dan acara formal',
+        'Notifikasi otomatis kalau pembayaran berhasil'
       ]
     },
     {
-      icon: Printer,
+      image: featureImages.print,
       title: 'Silent Print',
-      description: 'Teknologi printing tanpa suara, sempurna untuk event dan aktivasi brand. Kualitas foto profesional dengan kecepatan tinggi.',
+      description: 'Foto langsung jadi dalam hitungan detik — tanpa suara berisik! Teknologi silent print kami bikin proses cetak foto tetap tenang, cocok banget buat acara formal kayak wedding, gathering kantor, atau aktivasi brand. Kualitas cetak 300 DPI, hasilnya tajam dan profesional.',
       benefits: [
-        'Zero noise printing',
-        'Kualitas foto 300 DPI',
-        'Print speed < 10 detik',
-        'Auto paper cutting'
+        'Proses cetak sunyi, cocok acara formal',
+        'Kualitas foto 300 DPI, tajam dan profesional',
+        'Cetak cuma 5-10 detik per foto',
+        'Pemotongan kertas otomatis, rapi tanpa antre'
       ]
     },
     {
-      icon: Film,
+      image: featureImages.gif,
       title: 'GIF Engine',
-      description: 'Buat GIF animasi dari burst foto dengan frame kustom dan efek menarik. Hasil yang shareable di media sosial.',
+      description: 'Mau bikin GIF lucu dari foto tamu? Cukup ambil beberapa burst foto, dan sistem kami langsung mengubahnya jadi GIF animasi yang seru! Bisa ditambah frame kustom, efek transisi, dan langsung bisa di-share ke Instagram, TikTok, atau WhatsApp. Momen seru jadi makin hidup!',
       benefits: [
-        'Burst mode hingga 10 foto',
-        'Custom frame overlay',
-        'Efek transisi menarik',
-        'Export ke MP4/GIF'
+        'Ambil hingga 10 foto burst dalam sekali sesi',
+        'Bisa tambah frame dan efek transisi',
+        'Langung bisa di-share ke medsos',
+        'Export file GIF atau MP4'
       ]
     },
     {
-      icon: Newspaper,
+      image: featureImages.newspaper,
       title: 'Newspaper A4',
-      description: 'Template koran A4 yang unik untuk pengalaman foto yang berkesan. Desain vintage yang Instagram-worthy.',
+      description: 'Pengalaman foto yang beda dari biasanya! Cetak foto dengan template koran vintage ukuran A4. Tamu bisa custom judul berita dan caption sendiri, hasilnya unik dan aesthetic banget. Cocok buat pajangan di rumah atau kado spesial untuk orang tersayang.',
       benefits: [
-        'Template koran klasik',
-        'Custom headline & caption',
-        'Multiple layout options',
-        'High-quality print'
+        'Template koran vintage yang Instagrammable',
+        'Bisa tulis judul & caption sendiri',
+        'Beberapa pilihan layout koran',
+        'Cetak ukuran A4, langsung bisa dipajang'
       ]
     }
   ]
 
   const additionalFeatures = [
     {
+      image: featureImages.qrcode,
       icon: QrCode,
       title: 'QR Code Gallery',
-      description: 'Akses galeri foto langsung dari QR code yang di-scan dari hasil cetak.'
+      description: 'Setiap foto cetak punya QR code unik. Tamu tinggal scan, langsung bisa lihat dan download galeri digital foto mereka — kapan aja, di mana aja.'
     },
     {
-      icon: Wifi,
+      image: featureImages.offline,
+      icon: WifiOff,
       title: 'Offline Mode',
-      description: 'Tetap beroperasi meskipun koneksi internet terputus. Sinkronisasi otomatis saat online.'
+      description: 'Internet mati? Tenang, photobooth tetap jalan terus. Foto tetep bisa diambil, data tersimpan otomatis, dan langsung sinkron pas internet balik lagi.'
     },
     {
+      image: featureImages.cloud,
       icon: Cloud,
       title: 'Cloud Backup',
-      description: 'Semua foto tersimpan aman di cloud dengan backup otomatis.'
+      description: 'Semua foto tamu otomatis tersimpan aman di cloud. Gak perlu khawatir data hilang — backup real-time bikin bisnis Anda tetap aman.'
     },
     {
-      icon: Shield,
+      image: featureImages.secure,
+      icon: ShieldCheck,
       title: 'Secure & Private',
-      description: 'Enkripsi end-to-end untuk semua data dan foto pelanggan.'
+      description: 'Data dan foto tamu terenkripsi end-to-end. Privasi pelanggan tetap terjaga, bisnis Anda pun lebih terpercaya.'
     },
     {
-      icon: Zap,
+      image: featureImages.analytics,
+      icon: BarChart3,
       title: 'Real-time Analytics',
-      description: 'Dashboard analitik real-time untuk memantau performa booth.'
+      description: 'Pantau langsung performa booth Anda — jumlah foto, pendapatan, jam sibuk, semua dalam dashboard real-time yang gampang dibaca.'
     },
     {
-      icon: Camera,
+      image: featureImages.template,
+      icon: Layout,
       title: 'Multi-Template',
-      description: 'Pilih dari berbagai template foto yang bisa dikustomisasi.'
+      description: 'Pilih dari berbagai template foto yang kece. Bisa dikustomisasi sesuai branding event atau acara Anda.'
     }
   ]
 
@@ -162,20 +177,12 @@ export default function FeaturesPage() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 className={`grid lg:grid-cols-2 gap-12 items-center ${
-                  index % 2 === 1 ? 'lg:flex-row-reverse' : ''
+                  index % 2 === 1 ? '' : ''
                 }`}
               >
                 <div className={index % 2 === 1 ? 'lg:order-2' : ''}>
-                  <div 
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})`
-                    }}
-                  >
-                    <feature.icon className="w-8 h-8 text-white" />
-                  </div>
                   <h2 className="text-3xl font-bold text-gray-900 mb-4">{feature.title}</h2>
-                  <p className="text-lg text-gray-600 mb-6">{feature.description}</p>
+                  <p className="text-lg text-gray-600 mb-6 leading-relaxed">{feature.description}</p>
                   <ul className="space-y-3">
                     {feature.benefits.map((benefit, i) => (
                       <li key={i} className="flex items-center gap-3">
@@ -185,14 +192,13 @@ export default function FeaturesPage() {
                     ))}
                   </ul>
                 </div>
-                <div className={`bg-white rounded-2xl p-8 shadow-lg ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
-                  <div 
-                    className="aspect-video rounded-xl flex items-center justify-center"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${branding.primaryColor}20, ${branding.secondaryColor}20)`
-                    }}
-                  >
-                    <feature.icon className="w-24 h-24" style={{ color: branding.primaryColor }} />
+                <div className={`${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                  <div className="rounded-2xl overflow-hidden shadow-xl">
+                    <img
+                      src={feature.image}
+                      alt={feature.title}
+                      className="w-full aspect-video object-cover hover:scale-105 transition-transform duration-500"
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -223,16 +229,25 @@ export default function FeaturesPage() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -5 }}
-                className="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-all"
+                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all group"
               >
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                  style={{ backgroundColor: `${branding.primaryColor}20` }}
-                >
-                  <feature.icon className="w-6 h-6" style={{ color: branding.primaryColor }} />
+                <div className="h-40 overflow-hidden">
+                  <img
+                    src={feature.image}
+                    alt={feature.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <div className="p-6">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                    style={{ backgroundColor: `${branding.primaryColor}20` }}
+                  >
+                    <feature.icon className="w-5 h-5" style={{ color: branding.primaryColor }} />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
+                </div>
               </motion.div>
             ))}
           </div>
