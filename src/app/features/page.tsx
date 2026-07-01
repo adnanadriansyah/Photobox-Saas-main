@@ -20,12 +20,12 @@ const featureImages = {
   print: '/photos/features/silent-print.jpg',
   gif: '/photos/features/gif-engine.jpg',
   newspaper: '/photos/features/newspaper.jpg',
-  qrcode: '/photos/features/qrcode.jpg',
-  offline: '/photos/features/offline.jpg',
-  cloud: '/photos/features/cloud.jpg',
-  secure: '/photos/features/secure.jpg',
-  analytics: '/photos/features/analytics.jpg',
-  template: '/photos/features/template.jpg',
+  qrcode: '/photos/features/qr-code.jpg',
+  offline: '/photos/features/offline-mode.jpg',
+  cloud: '/photos/features/cloud-backup.jpg',
+  secure: '/photos/features/secure-private.jpg',
+  analytics: '/photos/features/realtime.jpg',
+  template: '/photos/features/multi-template.jpg',
 }
 
 // ============================================

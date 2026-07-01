@@ -225,10 +225,12 @@ function DropdownItem({
 export function Navbar() {
   const { branding } = useDashboardStore()
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false)
+  const [featuresDropdownOpen, setFeaturesDropdownOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [activeLink, setActiveLink] = useState('/')
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const loginDropdownRef = useRef<HTMLDivElement>(null)
+  const featuresDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -240,8 +242,10 @@ export function Navbar() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
+      if (loginDropdownRef.current && !loginDropdownRef.current.contains(e.target as Node))
         setLoginDropdownOpen(false)
+      if (featuresDropdownRef.current && !featuresDropdownRef.current.contains(e.target as Node))
+        setFeaturesDropdownOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -249,10 +253,32 @@ export function Navbar() {
 
   const navLinks = [
     { href: '/',             label: 'Home'         },
-    { href: '/features',     label: 'Features'     },
     { href: '/pricing',      label: 'Pricing'      },
     { href: '/locations',    label: 'Locations'    },
     { href: '/testimonials', label: 'Testimonials' },
+  ]
+
+  const featuresDropdown = [
+    {
+      image: '/photos/features/qris.jpg',
+      title: 'QRIS Payment',
+      desc: 'Bayar scan QRIS dari e-wallet atau m-banking.',
+    },
+    {
+      image: '/photos/features/silent-print.jpg',
+      title: 'Silent Print',
+      desc: 'Cetak foto senyap, cocok acara formal.',
+    },
+    {
+      image: '/photos/features/gif-engine.jpg',
+      title: 'GIF Engine',
+      desc: 'Buat GIF dari burst foto, share ke medsos.',
+    },
+    {
+      image: '/photos/features/newspaper.jpg',
+      title: 'Newspaper A4',
+      desc: 'Template koran vintage, custom caption.',
+    },
   ]
 
   const dropdownItems = [
@@ -327,7 +353,92 @@ export function Navbar() {
 
         {/* ── Desktop Nav ────────────────────────────────────── */}
         <nav className="hidden md:flex items-center gap-0.5" style={{ perspective: '800px' }}>
-          {navLinks.map((link, i) => (
+          <MagneticNavLink
+            href="/"
+            label="Home"
+            isActive={activeLink === '/'}
+            primaryColor={branding.primaryColor}
+            secondaryColor={branding.secondaryColor}
+            index={0}
+            onClick={() => setActiveLink('/')}
+          />
+
+          {/* Features Dropdown */}
+          <div
+            className="relative"
+            ref={featuresDropdownRef}
+            onMouseEnter={() => setFeaturesDropdownOpen(true)}
+            onMouseLeave={() => setFeaturesDropdownOpen(false)}
+          >
+            <MagneticNavLink
+              href="/features"
+              label="Features"
+              isActive={activeLink === '/features'}
+              primaryColor={branding.primaryColor}
+              secondaryColor={branding.secondaryColor}
+              index={1}
+              onClick={() => setActiveLink('/features')}
+            />
+
+            <AnimatePresence>
+              {featuresDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -12, scale: 0.93, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, y: 0,   scale: 1,    filter: 'blur(0px)' }}
+                  exit={{   opacity: 0, y: -8,   scale: 0.93, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.22, ease }}
+                  className="absolute left-1/2 -translate-x-1/2 mt-2.5 w-[580px] bg-white rounded-2xl overflow-hidden"
+                  style={{
+                    transformOrigin: 'top center',
+                    boxShadow: '0 24px 60px rgba(0,0,0,0.13), 0 4px 16px rgba(0,0,0,0.06)',
+                    border: '1px solid rgba(0,0,0,0.06)',
+                  }}
+                >
+                  {/* Gradient top stripe */}
+                  <div
+                    className="h-1 w-full"
+                    style={{ background: `linear-gradient(90deg, ${branding.primaryColor}, ${branding.secondaryColor})` }}
+                  />
+
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      {featuresDropdown.map((feat, i) => (
+                        <a
+                          key={feat.title}
+                          href="/features"
+                          onClick={() => { setActiveLink('/features'); setFeaturesDropdownOpen(false) }}
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                        >
+                          <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                            <img
+                              src={feat.image}
+                              alt={feat.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">{feat.title}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{feat.desc}</p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+
+                    <a
+                      href="/features"
+                      onClick={() => { setActiveLink('/features'); setFeaturesDropdownOpen(false) }}
+                      className="mt-3 block text-center py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                      style={{ backgroundColor: `${branding.primaryColor}10`, color: branding.primaryColor }}
+                    >
+                      Lihat Semua Fitur →
+                    </a>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {navLinks.slice(1).map((link, i) => (
             <MagneticNavLink
               key={link.href}
               href={link.href}
@@ -335,7 +446,7 @@ export function Navbar() {
               isActive={activeLink === link.href}
               primaryColor={branding.primaryColor}
               secondaryColor={branding.secondaryColor}
-              index={i}
+              index={i + 2}
               onClick={() => setActiveLink(link.href)}
             />
           ))}
@@ -349,7 +460,7 @@ export function Navbar() {
           className="flex items-center gap-3"
         >
           {/* Login dropdown trigger */}
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative" ref={loginDropdownRef}>
             <motion.button
               onClick={() => setLoginDropdownOpen(!loginDropdownOpen)}
               whileHover={{ scale: 1.04 }}
@@ -517,6 +628,34 @@ export function Navbar() {
                   )}
                 </motion.a>
               ))}
+
+              {/* Mobile Features */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.22, duration: 0.3, ease }}
+                className="mt-2 pt-2.5 border-t"
+                style={{ borderColor: `${branding.primaryColor}14` }}
+              >
+                <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  Fitur
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {featuresDropdown.map((feat) => (
+                    <a
+                      key={feat.title}
+                      href="/features"
+                      onClick={() => { setActiveLink('/features'); setMobileMenuOpen(false) }}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="w-10 h-8 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={feat.image} alt={feat.title} className="w-full h-full object-cover" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700">{feat.title}</span>
+                    </a>
+                  ))}
+                </div>
+              </motion.div>
 
               {/* Mobile login shortcuts */}
               <motion.div
