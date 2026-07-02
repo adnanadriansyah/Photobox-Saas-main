@@ -289,11 +289,11 @@ export function PaymentSelector({ totalPrice, onSelect, config, customerPhone, o
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4 overflow-hidden">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-3xl p-8 max-w-md w-full"
+        className="bg-white rounded-3xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto"
       >
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -484,11 +484,11 @@ export function QrisDisplay({ qrString, amount, onComplete, onCancel }: QrisDisp
   const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrString)}`
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-hidden">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-3xl p-8 max-w-md w-full text-center"
+        className="bg-white rounded-3xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto text-center"
       >
         <h2 className="text-2xl font-bold mb-2">Scan untuk Bayar</h2>
         <p className="text-gray-500 mb-6">Scan QR code ini dengan aplikasi banking Anda</p>
@@ -553,7 +553,7 @@ export function TemplateSelector({ templates, onSelect, sessionTimerActive, sess
   const secs = sessionTimerSeconds ? sessionTimerSeconds % 60 : 0
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center overflow-hidden">
       {/* Timer - Always visible at top right */}
       <div className="fixed top-4 right-4 z-[60] bg-black/80 backdrop-blur-sm rounded-2xl px-4 py-2 flex items-center gap-2">
         <Timer className="w-5 h-5 text-yellow-400" />
@@ -565,7 +565,7 @@ export function TemplateSelector({ templates, onSelect, sessionTimerActive, sess
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-3xl p-8 max-w-4xl w-full"
+        className="bg-white rounded-3xl p-6 max-w-4xl w-full max-h-[85vh] overflow-y-auto"
       >
         <h2 className="text-2xl font-bold text-center mb-2">Pilih Template</h2>
         <p className="text-gray-500 text-center mb-6">Pilih template Ramadhan untuk sesi foto Anda</p>
@@ -614,12 +614,12 @@ interface BoothGuideProps {
 
 export function BoothGuide({ template, onStart }: BoothGuideProps) {
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4 overflow-hidden">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="bg-white rounded-3xl p-8 max-w-lg w-full"
+        className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto"
       >
         {/* Header */}
         <div className="text-center mb-8">
@@ -1034,9 +1034,9 @@ export function PhotoPreview({ photos, template, onRetake, onPrint, onContinue }
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex overflow-hidden">
       {/* Left Side - Main Image */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="p-4 text-center">
           <h2 className="text-2xl font-bold text-white">Hasil Foto</h2>
@@ -1162,11 +1162,11 @@ export function PrintUpsellModal({
   const additionalCost = additionalCopies * pricePerCopy
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-hidden">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-3xl p-8 max-w-md w-full"
+        className="bg-white rounded-3xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto"
       >
         {!showPayment ? (
           <>
@@ -1341,14 +1341,14 @@ export function CompletedScreen({ galleryCode, customerPhone, onDone }: Complete
   ]
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4 overflow-hidden">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-3xl p-8 max-w-lg w-full"
+        className="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto"
       >
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30">
             {step === 0 ? (
               <Check className="w-10 h-10 text-white" />
@@ -1574,7 +1574,7 @@ export function OfflineBanner() {
 
 export function ProcessingScreen() {
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black flex items-center justify-center z-50 overflow-hidden">
       <div className="text-center text-white">
         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-xl">Memproses foto Anda...</p>

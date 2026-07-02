@@ -716,7 +716,7 @@ export default function BoothPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black overflow-hidden">
       <OfflineBanner />
 
       <SessionTimer
