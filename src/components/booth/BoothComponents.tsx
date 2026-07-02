@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Sparkles, CreditCard, Download, Share2, Printer, RefreshCw, Clock, Wifi, WifiOff, ChevronLeft, ChevronRight, Phone, Timer, Check, X, Plus, Minus } from 'lucide-react'
+import { Camera, Sparkles, CreditCard, Download, Share2, Printer, RefreshCw, Clock, Wifi, WifiOff, ChevronLeft, ChevronRight, Phone, Timer, Check, X, Plus, Minus, Globe, QrCode } from 'lucide-react'
 import { useBoothStore, usePaymentStore, type Photo, type Template } from '@/lib/stores/booth-store'
 import { compositeToFrame, generateCompositeThumbnail } from '@/lib/photo-compositor'
 
@@ -248,7 +248,7 @@ export function PaymentSelector({ totalPrice, onSelect, config, customerPhone, o
 
   const finalPrice = totalPrice - voucherDiscount
 
-  const handleVoucherApply = () => {
+  const handleVoucherApply = async () => {
     if (!voucherCode || voucherCode.length < 4) {
       setVoucherError('Kode voucher minimal 4 karakter')
       return
@@ -257,17 +257,29 @@ export function PaymentSelector({ totalPrice, onSelect, config, customerPhone, o
     setIsApplyingVoucher(true)
     setVoucherError('')
     
-    // Simulate voucher validation
-    setTimeout(() => {
-      // Demo: accept any code starting with 'FREE' or 'TEST'
-      if (voucherCode.toUpperCase().startsWith('FREE') || voucherCode.toUpperCase().startsWith('TEST')) {
-        applyVoucher(voucherCode, totalPrice) // Full discount for demo
+    try {
+      const response = await fetch('/api/payment/validate-voucher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: voucherCode.toUpperCase(),
+          amount: totalPrice,
+        }),
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        applyVoucher(voucherCode, data.data.discount)
         setIsApplyingVoucher(false)
       } else {
-        setVoucherError('Kode voucher tidak valid')
+        setVoucherError(data.error || 'Kode voucher tidak valid')
         setIsApplyingVoucher(false)
       }
-    }, 1000)
+    } catch (error) {
+      console.error('Voucher validation error:', error)
+      setVoucherError('Gagal memvalidasi voucher, coba lagi')
+      setIsApplyingVoucher(false)
+    }
   }
 
   const handleVoucherContinue = () => {
@@ -1273,45 +1285,267 @@ interface CompletedScreenProps {
 }
 
 export function CompletedScreen({ galleryCode, customerPhone, onDone }: CompletedScreenProps) {
+  const galleryUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/gallery?code=${galleryCode}`
+  const [step, setStep] = useState(0)
+
+  const steps = [
+    {
+      icon: Check,
+      color: 'bg-green-500',
+      title: 'Foto Berhasil Dicetak!',
+      desc: 'Foto kamu sudah dicetak dan siap diambil.',
+    },
+    {
+      icon: Download,
+      color: 'bg-blue-500',
+      title: 'Dapatkan Kode Galeri',
+      desc: `Kode unik ${galleryCode} adalah kunci untuk download foto digital kamu.`,
+    },
+    {
+      icon: Phone,
+      color: 'bg-purple-500',
+      title: 'Akses via 3 Cara',
+      desc: customerPhone
+        ? `Link otomatis dikirim ke WhatsApp ${customerPhone}`
+        : 'Buka website atau scan QR code yang tersedia.',
+    },
+    {
+      icon: Download,
+      color: 'bg-pink-500',
+      title: 'Download Foto',
+      desc: 'Klik download per foto atau "Download All" untuk dapatkan semua foto dalam 1 file ZIP.',
+    },
+  ]
+
+  const guideCards = [
+    {
+      icon: Phone,
+      title: 'Via WhatsApp',
+      desc: customerPhone
+        ? `Link galeri dikirim otomatis ke ${customerPhone}`
+        : 'Masukkan nomor WhatsApp saat bayar untuk terima link otomatis',
+      active: !!customerPhone,
+    },
+    {
+      icon: Globe,
+      title: 'Via Website',
+      desc: `Buka website, masukin kode ${galleryCode} di halaman Gallery`,
+      active: true,
+    },
+    {
+      icon: QrCode,
+      title: 'Via QR Code',
+      desc: 'Scan QR code di bawah untuk buka galeri langsung',
+      active: true,
+    },
+  ]
+
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center z-50 p-4">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-3xl p-8 max-w-md w-full text-center"
+        className="bg-white rounded-3xl p-8 max-w-lg w-full"
       >
-        <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Check className="w-12 h-12 text-white" />
-        </div>
-        
-        <h2 className="text-2xl font-bold mb-2">Terima Kasih!</h2>
-        <p className="text-gray-500 mb-6">Foto Anda sudah selesai dicetak</p>
-
-        {/* Gallery Code */}
-        <div className="bg-purple-50 rounded-xl p-4 mb-6">
-          <p className="text-sm text-gray-500 mb-1">Kode Galeri</p>
-          <p className="text-3xl font-bold text-purple-600 font-mono">{galleryCode}</p>
-        </div>
-
-        {/* WhatsApp Notification */}
-        {customerPhone && (
-          <div className="bg-green-50 rounded-xl p-4 mb-6 flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <Phone className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-semibold text-green-700">Link galeri akan dikirim</p>
-              <p className="text-xs text-green-600">via WhatsApp ke {customerPhone}</p>
-            </div>
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30">
+            {step === 0 ? (
+              <Check className="w-10 h-10 text-white" />
+            ) : (
+              <Download className="w-10 h-10 text-white" />
+            )}
           </div>
-        )}
+          <h2 className="text-2xl font-bold">Terima Kasih!</h2>
+          <p className="text-gray-500">Foto kamu sudah selesai dicetak</p>
+        </div>
 
-        <button
-          onClick={onDone}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold hover:from-pink-400 hover:to-purple-500 transition-colors"
+        {/* Gallery Code - Hero */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 mb-6 text-center shadow-xl"
         >
-          Selesai
-        </button>
+          <p className="text-purple-100 text-sm mb-2 font-medium">KODE GALERI KAMU</p>
+          <p className="text-5xl font-bold text-white font-mono tracking-widest">{galleryCode}</p>
+          <div className="mt-3 flex items-center justify-center gap-2 text-purple-100 text-sm">
+            <Clock className="w-4 h-4" />
+            <span>Berlaku 7 hari sejak cetak</span>
+          </div>
+        </motion.div>
+
+        {/* Step Progress */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          {steps.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setStep(i)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                step === i ? 'bg-purple-600 w-6' : 'bg-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Step Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -50, opacity: 0 }}
+            className="mb-6"
+          >
+            {step === 0 && (
+              <div className="bg-green-50 rounded-2xl p-6 text-center">
+                <p className="text-green-700 font-semibold text-lg mb-2">✅ Cetak Berhasil</p>
+                <p className="text-green-600">
+                  Foto kamu sudah tercetak. Jangan lupa simpan kode galeri di bawah untuk download foto digitalnya!
+                </p>
+                <div className="mt-4 bg-white rounded-xl p-3 text-sm text-green-700 border border-green-200">
+                  <Download className="w-4 h-4 inline mr-1" />
+                  Geser ke kanan untuk lihat panduan download →
+                </div>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="space-y-4">
+                <p className="text-gray-700 text-center font-medium">Pilih cara akses galeri foto kamu:</p>
+                {guideCards.map((card, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: i * 0.1 }}
+                    className={`flex items-start gap-4 p-4 rounded-2xl ${
+                      card.active
+                        ? 'bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100'
+                        : 'bg-gray-50 border border-gray-200 opacity-60'
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      card.active ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-gray-300'
+                    }`}>
+                      <card.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-gray-900">{card.title}</p>
+                        {card.active && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Tersedia</span>}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">{card.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-4">
+                <p className="text-gray-700 text-center font-medium">Cara download foto:</p>
+
+                <div className="bg-blue-50 rounded-2xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">1</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Download satu foto</p>
+                      <p className="text-sm text-gray-500">Arahkan mouse ke foto yang diinginkan, klik ikon download</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 rounded-2xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">2</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Download semua foto (ZIP)</p>
+                      <p className="text-sm text-gray-500">Klik tombol "Download All" untuk download semua foto dalam 1 file ZIP</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-pink-50 rounded-2xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">3</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Cetak ulang</p>
+                      <p className="text-sm text-gray-500">Klik tombol "Print" di halaman galeri untuk cetak ulang foto</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <QrCode className="w-8 h-8 text-white" />
+                </div>
+                <p className="font-semibold text-gray-900 mb-2">Scan QR Code untuk buka galeri</p>
+                <p className="text-sm text-gray-500 mb-4">Atau buka link ini di browser:</p>
+                <div className="bg-white rounded-xl p-3 border text-sm font-mono text-purple-600 truncate mb-4 shadow-sm">
+                  {galleryUrl}
+                </div>
+                <div className="inline-block bg-white rounded-xl p-3 border shadow-sm">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(galleryUrl)}`}
+                    alt="QR Code"
+                    className="w-36 h-36"
+                  />
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Navigation Buttons */}
+        <div className="flex gap-3">
+          {step > 0 && (
+            <button
+              onClick={() => setStep(step - 1)}
+              className="flex-1 py-3 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Sebelumnya
+            </button>
+          )}
+          {step < steps.length - 1 ? (
+            <button
+              onClick={() => setStep(step + 1)}
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-400 hover:to-pink-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
+            >
+              Selanjutnya
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              onClick={onDone}
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:from-green-400 hover:to-emerald-500 transition-colors shadow-lg shadow-green-500/30"
+            >
+              Selesai
+            </button>
+          )}
+        </div>
+
+        {/* WhatsApp Notification Banner */}
+        {customerPhone && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-4 bg-green-50 rounded-xl p-3 flex items-center gap-3 border border-green-200"
+          >
+            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <Phone className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left text-sm">
+              <p className="font-semibold text-green-700">Link galeri dikirim via WhatsApp</p>
+              <p className="text-green-600">Cek WhatsApp {customerPhone} untuk link langsung</p>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   )

@@ -414,6 +414,8 @@ export const useBoothStore = create<BoothState>()(
           photos: state.session.photos,
           sessionTimer: state.session.sessionTimer,
           sessionTimerActive: state.session.sessionTimerActive,
+          galleryCode: state.session.galleryCode,
+          customerPhone: state.session.customerPhone,
         },
       }),
     }

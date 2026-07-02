@@ -3,7 +3,7 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentGateway } from '@/lib/payment/adapter'
+import { getPaymentGateway, DemoPaymentAdapter } from '@/lib/payment/adapter'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,16 +17,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get payment gateway (Doku by default)
-    const gateway = getPaymentGateway('doku')
+    let gateway = getPaymentGateway('doku')
 
-    // Create payment
-    const result = await gateway.createPayment({
+    let result = await gateway.createPayment({
       amount,
       orderId,
       customerPhone,
       description: `SnapNext Photo Booth - ${orderId}`,
     })
+
+    // Fallback ke demo mode jika gateway gagal
+    if (!result.success) {
+      console.warn('[QRIS API] Gateway failed, falling back to demo:', result.error)
+      gateway = new DemoPaymentAdapter()
+      result = await gateway.createPayment({
+        amount,
+        orderId,
+        customerPhone,
+        description: `SnapNext Photo Booth - ${orderId}`,
+      })
+    }
 
     if (result.success) {
       return NextResponse.json({

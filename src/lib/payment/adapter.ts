@@ -430,7 +430,7 @@ export function getPaymentGateway(provider: PaymentProvider): PaymentGateway {
 // Demo Mode Payment Adapter (Mock)
 // ============================================
 
-class DemoPaymentAdapter implements PaymentGateway {
+export class DemoPaymentAdapter implements PaymentGateway {
   async createPayment(params: PaymentParams): Promise<PaymentResult> {
     // In demo mode, immediately return success
     return {

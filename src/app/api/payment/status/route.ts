@@ -3,7 +3,7 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getPaymentGateway } from '@/lib/payment/adapter'
+import { getPaymentGateway, DemoPaymentAdapter } from '@/lib/payment/adapter'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,11 +18,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get payment gateway
-    const gateway = getPaymentGateway('doku')
+    let gateway = getPaymentGateway('doku')
 
-    // Check payment status
-    const result = await gateway.checkPayment(transactionRef)
+    let result = await gateway.checkPayment(transactionRef)
+
+    // Fallback ke demo mode jika gateway gagal
+    if (!result.success) {
+      console.warn('[Payment Status] Gateway failed, falling back to demo:', result.error)
+      gateway = new DemoPaymentAdapter()
+      result = await gateway.checkPayment(transactionRef)
+    }
 
     if (result.success) {
       return NextResponse.json({
